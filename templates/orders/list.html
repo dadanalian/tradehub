@@ -1,17 +1,8 @@
 {% extends "base.html" %}
-{% block title %}{{ '我的订单' if lang == 'zh' else 'My Orders' }}{% endblock %}
-{% block content %}
-<div class="container">
-    <h2 style="font-size:22px;font-weight:700;margin:20px 0">{% if lang == 'zh' %}我的订单{% else %}My Orders{% endif %}</h2>
-    {% if orders %}
-    <table class="admin-table"><thead><tr><th>#</th><th>{% if lang == 'zh' %}日期{% else %}Date{% endif %}</th><th>{% if lang == 'zh' %}金额{% else %}Amount{% endif %}</th><th>{% if lang == 'zh' %}状态{% else %}Status{% endif %}</th><th></th></tr></thead><tbody>
-    {% for o in orders %}
-    <tr><td><b>#{{ o.id }}</b></td><td>{{ o.created_at.strftime('%Y-%m-%d') }}</td><td class="text-red fw-bold">${{ "%.2f"|format(o.total_amount) }}</td><td>
-        {% set m={'pending':('待确认','Pending','status-pending'),'confirmed':('已确认','Confirmed','status-confirmed'),'shipped':('已发货','Shipped','status-shipped'),'delivered':('已送达','Delivered','status-delivered'),'cancelled':('已取消','Cancelled','status-cancelled')} %}
-        {% set s=m.get(o.status, (o.status,o.status,'')) %}<span class="status-badge {{ s[2] }}">{{ s[0] if lang=='zh' else s[1] }}</span>
-    </td><td><a href="{{ url_for('order_detail', order_id=o.id) }}" class="btn-sm-outline">{% if lang == 'zh' %}详情{% else %}Detail{% endif %}</a></td></tr>
-    {% endfor %}
-    </tbody></table>
-    {% else %}<div class="empty-state"><div class="empty-icon">&#x1f4e6;</div><h3>{% if lang == 'zh' %}暂无订单{% else %}No orders{% endif %}</h3></div>{% endif %}
-</div>
-{% endblock %}
+{% block title %}{{ t("my_orders") }}{% endblock %}
+{% block content %}<div class="container"><h2 style="font-size:22px;font-weight:700;margin:20px 0">{{ t("my_orders") }}</h2>
+{% if orders %}<table class="d-table"><thead><tr><th>#</th><th>Date</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>
+{% for o in orders %}<tr><td><b>#{{ o.id }}</b></td><td>{{ o.created_at.strftime('%Y-%m-%d') }}</td><td style="font-weight:700;color:var(--blue)">${{ "%.2f"|format(o.total_amount) }}</td>
+<td><span class="status status-{{ o.status }}">{{ o.status }}</span></td>
+<td><a href="{{ url_for('order_detail', order_id=o.id) }}" class="btn-outline-blue" style="padding:4px 14px;font-size:12px">View</a></td></tr>{% endfor %}
+</tbody></table>{% else %}<div class="empty"><div class="icon">📦</div><h3>No orders yet</h3></div>{% endif %}</div>{% endblock %}

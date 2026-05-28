@@ -1,20 +1,10 @@
-{% extends "base.html" %}
-{% block title %}Admin - Products{% endblock %}
-{% block content %}
-<div class="container"><div class="admin-layout">
-    <div class="admin-sidebar">
-        <a href="{{ url_for('admin') }}">&#x1f4ca; Dashboard</a>
-        <a href="{{ url_for('admin_products') }}" class="active">&#x1f4e6; Products</a>
-        <a href="{{ url_for('admin_orders') }}">&#x1f4cb; Orders</a>
-        <a href="{{ url_for('admin_inquiries') }}">&#x1f4e9; Inquiries</a>
-    </div>
-    <div class="admin-main">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px"><h3 style="font-size:18px;font-weight:700">Products</h3><a href="{{ url_for('admin_product_add') }}" class="btn-lg-red" style="padding:8px 20px;font-size:13px">+ Add Product</a></div>
-        <table class="admin-table"><thead><tr><th>ID</th><th>Image</th><th>Name</th><th>Price</th><th>Stock</th><th>Featured</th><th></th></tr></thead><tbody>
-            {% for p in products %}
-            <tr><td>{{ p.id }}</td><td><img src="{{ p.image_url or 'https://placehold.co/40/f5f5f5/ccc' }}" width="40" style="border-radius:4px"></td><td>{{ p.name_en }}</td><td class="text-red fw-bold">${{ "%.2f"|format(p.price) }}</td><td>{{ p.stock }}</td><td>{{ 'Yes' if p.is_featured else 'No' }}</td><td><a href="{{ url_for('admin_product_edit', product_id=p.id) }}" class="btn-sm-outline">Edit</a></td></tr>
-            {% endfor %}
-        </tbody></table>
-    </div>
-</div></div>
-{% endblock %}
+{% extends "base.html" %}{% block content %}<div class="container"><div class="admin-layout">
+<div class="admin-sidebar">
+<a href="{{ url_for('admin') }}" class="{{ 'active' if request.endpoint=='admin' }}">Dashboard</a>
+<a href="{{ url_for('admin_products') }}" class="{{ 'active' if 'product' in request.endpoint }}">Products</a>
+<a href="{{ url_for('admin_orders') }}" class="{{ 'active' if 'order' in request.endpoint }}">Orders</a>
+<a href="{{ url_for('admin_inquiries') }}" class="{{ 'active' if 'inquir' in request.endpoint }}">Inquiries</a>
+</div>
+<div class="admin-main"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h3 style="font-size:18px;font-weight:700">Products</h3><a href="{{ url_for('admin_product_add') }}" class="btn-blue" style="padding:8px 18px;font-size:13px">+ Add Product</a></div>
+<table class="d-table"><thead><tr><th>ID</th><th>Image</th><th>Name</th><th>Price</th><th>Stock</th><th></th></tr></thead><tbody>{% for p in products %}<tr><td>{{ p.id }}</td><td><img src="{{ p.image_url or 'https://placehold.co/36/f1f5f9/94a3b8' }}" width="36" style="border-radius:4px"></td><td>{{ p.name_en }}</td><td style="font-weight:700;color:var(--blue)">${{ "%.2f"|format(p.price) }}</td><td>{{ p.stock }}</td><td><a href="{{ url_for('admin_product_edit', product_id=p.id) }}" class="btn-outline-blue" style="padding:4px 14px;font-size:12px">Edit</a></td></tr>{% endfor %}</tbody></table>
+</div></div></div>{% endblock %}

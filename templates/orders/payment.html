@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ t("payment_info_title") }}{% endblock %}
+{% block content %}
+<div class="container payment-page">
+<div class="payment-card" style="background:var(--blue-light);border-color:var(--blue)">
+<h3>✅ {{ t("order_success") }}</h3>
+<p style="color:var(--gray)">Order #{{ order.id }} | Total: <b style="color:var(--blue)">${{ "%.2f"|format(order.total_amount) }}</b></p>
+</div>
+<div class="payment-card"><h3>{{ t("payment_info_title") }}</h3>
+<div class="payment-methods">
+<div class="payment-method"><div class="pm-icon">💳</div><div><h4>{{ t("payment_card") }}</h4><p>Visa, Mastercard accepted. Secure SSL encrypted.</p></div></div>
+<div class="payment-method"><div class="pm-icon">🅿️</div><div><h4>{{ t("payment_paypal") }}</h4><p>Send to: payments@tradehub.com</p></div></div>
+<div class="payment-method"><div class="pm-icon">🏦</div><div><h4>{{ t("payment_tt") }}</h4><p>Bank details will be sent to your email.</p></div></div>
+<div class="payment-method"><div class="pm-icon">💵</div><div><h4>{{ t("payment_wu") }}</h4><p>Available for international transfers.</p></div></div>
+</div></div>
+<div class="payment-card"><h3>{{ t("how_merchant_gets_paid") }}</h3>
+<p style="color:var(--gray);font-size:13px;line-height:1.8">{{ t("merchant_info") }}</p>
+</div>
+<div style="text-align:center;margin:20px 0"><a href="{{ url_for('products') }}" class="btn-blue">{{ t("shop_now") }}</a></div>
+</div>{% endblock %}

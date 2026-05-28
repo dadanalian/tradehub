@@ -1,31 +1,10 @@
-{% extends "base.html" %}
-{% block title %}Admin - Orders{% endblock %}
-{% block content %}
-<div class="container"><div class="admin-layout">
-    <div class="admin-sidebar">
-        <a href="{{ url_for('admin') }}">&#x1f4ca; Dashboard</a>
-        <a href="{{ url_for('admin_products') }}">&#x1f4e6; Products</a>
-        <a href="{{ url_for('admin_orders') }}" class="active">&#x1f4cb; Orders</a>
-        <a href="{{ url_for('admin_inquiries') }}">&#x1f4e9; Inquiries</a>
-    </div>
-    <div class="admin-main">
-        <h3 style="font-size:18px;font-weight:700;margin-bottom:15px">Orders</h3>
-        <table class="admin-table"><thead><tr><th>#</th><th>Customer</th><th>Email</th><th>Amount</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody>
-            {% for o in orders %}
-            <tr><td><b>#{{ o.id }}</b></td><td>{{ o.contact_name }}</td><td>{{ o.contact_email }}</td><td class="text-red fw-bold">${{ "%.2f"|format(o.total_amount) }}</td><td><span class="status-badge status-{{ o.status }}">{{ o.status }}</span></td><td>{{ o.created_at.strftime('%Y-%m-%d') }}</td><td>
-                <form action="{{ url_for('admin_order_status', order_id=o.id) }}" method="POST" style="display:flex;gap:4px">
-                    <select name="status" style="padding:4px;border:1px solid var(--jd-border);border-radius:4px;font-size:12px">
-                        <option value="pending" {{ 'selected' if o.status=='pending' }}>Pending</option>
-                        <option value="confirmed" {{ 'selected' if o.status=='confirmed' }}>Confirmed</option>
-                        <option value="shipped" {{ 'selected' if o.status=='shipped' }}>Shipped</option>
-                        <option value="delivered" {{ 'selected' if o.status=='delivered' }}>Delivered</option>
-                        <option value="cancelled" {{ 'selected' if o.status=='cancelled' }}>Cancelled</option>
-                    </select>
-                    <button class="btn-sm-red" style="padding:4px 10px;font-size:11px">Update</button>
-                </form>
-            </td></tr>
-            {% endfor %}
-        </tbody></table>
-    </div>
-</div></div>
-{% endblock %}
+{% extends "base.html" %}{% block content %}<div class="container"><div class="admin-layout">
+<div class="admin-sidebar">
+<a href="{{ url_for('admin') }}" class="{{ 'active' if request.endpoint=='admin' }}">Dashboard</a>
+<a href="{{ url_for('admin_products') }}" class="{{ 'active' if 'product' in request.endpoint }}">Products</a>
+<a href="{{ url_for('admin_orders') }}" class="{{ 'active' if 'order' in request.endpoint }}">Orders</a>
+<a href="{{ url_for('admin_inquiries') }}" class="{{ 'active' if 'inquir' in request.endpoint }}">Inquiries</a>
+</div>
+<div class="admin-main"><h3 style="font-size:18px;font-weight:700;margin-bottom:14px">Orders</h3>
+<table class="d-table"><thead><tr><th>#</th><th>Customer</th><th>Email</th><th>Amount</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody>{% for o in orders %}<tr><td><b>#{{ o.id }}</b></td><td>{{ o.contact_name }}</td><td>{{ o.contact_email }}</td><td style="font-weight:700;color:var(--blue)">${{ "%.2f"|format(o.total_amount) }}</td><td><span class="status status-{{ o.status }}">{{ o.status }}</span></td><td>{{ o.created_at.strftime('%Y-%m-%d') }}</td><td><form action="{{ url_for('admin_order_status', order_id=o.id) }}" method="POST" style="display:flex;gap:4px"><select name="status" style="padding:4px;border:1px solid var(--border);border-radius:4px;font-size:12px">{% for s in ['pending','confirmed','shipped','delivered','cancelled'] %}<option value="{{ s }}" {{ 'selected' if o.status==s }}>{{ s }}</option>{% endfor %}</select><button class="btn-outline-blue" style="padding:4px 10px;font-size:11px">Update</button></form></td></tr>{% endfor %}</tbody></table>
+</div></div></div>{% endblock %}

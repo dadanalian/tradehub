@@ -1,26 +1,10 @@
-{% extends "base.html" %}
-{% block title %}Admin - Inquiries{% endblock %}
-{% block content %}
-<div class="container"><div class="admin-layout">
-    <div class="admin-sidebar">
-        <a href="{{ url_for('admin') }}">&#x1f4ca; Dashboard</a>
-        <a href="{{ url_for('admin_products') }}">&#x1f4e6; Products</a>
-        <a href="{{ url_for('admin_orders') }}">&#x1f4cb; Orders</a>
-        <a href="{{ url_for('admin_inquiries') }}" class="active">&#x1f4e9; Inquiries</a>
-    </div>
-    <div class="admin-main">
-        <h3 style="font-size:18px;font-weight:700;margin-bottom:15px">Inquiries</h3>
-        <table class="admin-table"><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Product</th><th>Message</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody>
-            {% for i in inquiries %}
-            <tr style="{{ 'background:#fffbf0' if not i.is_read }}">
-                <td>{{ i.id }}</td><td>{{ i.name }}</td><td>{{ i.email }}</td><td>{{ i.product.name_en if i.product else '-' }}</td>
-                <td><small>{{ i.message[:60] }}...</small></td>
-                <td><span class="status-badge {{ 'status-delivered' if i.is_read else 'status-pending' }}">{{ 'Read' if i.is_read else 'New' }}</span></td>
-                <td>{{ i.created_at.strftime('%m-%d %H:%M') }}</td>
-                <td>{% if not i.is_read %}<form action="{{ url_for('admin_inquiry_read', inquiry_id=i.id) }}" method="POST"><button class="btn-sm-red" style="padding:4px 10px;font-size:11px">Mark Read</button></form>{% endif %}</td>
-            </tr>
-            {% endfor %}
-        </tbody></table>
-    </div>
-</div></div>
-{% endblock %}
+{% extends "base.html" %}{% block content %}<div class="container"><div class="admin-layout">
+<div class="admin-sidebar">
+<a href="{{ url_for('admin') }}" class="{{ 'active' if request.endpoint=='admin' }}">Dashboard</a>
+<a href="{{ url_for('admin_products') }}" class="{{ 'active' if 'product' in request.endpoint }}">Products</a>
+<a href="{{ url_for('admin_orders') }}" class="{{ 'active' if 'order' in request.endpoint }}">Orders</a>
+<a href="{{ url_for('admin_inquiries') }}" class="{{ 'active' if 'inquir' in request.endpoint }}">Inquiries</a>
+</div>
+<div class="admin-main"><h3 style="font-size:18px;font-weight:700;margin-bottom:14px">Inquiries</h3>
+<table class="d-table"><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Product</th><th>Message</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody>{% for i in inquiries %}<tr style="{{ 'background:#fffbeb' if not i.is_read }}"><td>{{ i.id }}</td><td>{{ i.name }}</td><td>{{ i.email }}</td><td>{{ i.product.name_en if i.product else '-' }}</td><td><small>{{ i.message[:50] }}...</small></td><td><span class="status {{ 'status-delivered' if i.is_read else 'status-pending' }}">{{ 'Read' if i.is_read else 'New' }}</span></td><td>{{ i.created_at.strftime('%m-%d %H:%M') }}</td><td>{% if not i.is_read %}<form action="{{ url_for('admin_inquiry_read', inquiry_id=i.id) }}" method="POST"><button class="btn-outline-blue" style="padding:4px 10px;font-size:11px">Mark Read</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table>
+</div></div></div>{% endblock %}

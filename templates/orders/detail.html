@@ -1,28 +1,19 @@
 {% extends "base.html" %}
 {% block title %}#{{ order.id }}{% endblock %}
-{% block content %}
-<div class="container">
-    <div class="breadcrumb"><a href="{{ url_for('orders') }}">{% if lang == 'zh' %}我的订单{% else %}My Orders{% endif %}</a> &gt; #{{ order.id }}</div>
-    <div style="display:flex;gap:20px">
-        <div style="flex:1;background:#fff;border-radius:4px;padding:25px">
-            <h3 style="font-size:16px;font-weight:700;margin-bottom:15px">{% if lang == 'zh' %}订单商品{% else %}Items{% endif %}</h3>
-            {% for item in order.items %}
-            <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--jd-border)">
-                <img src="{{ item.product.image_url or 'https://placehold.co/60/f5f5f5/ccc' }}" width="60" style="border:1px solid var(--jd-border);border-radius:4px">
-                <div style="flex:1"><b>{{ item.product.name_zh if lang=='zh' else item.product.name_en }}</b><br><small style="color:var(--jd-gray)">x{{ item.quantity }} &times; ${{ "%.2f"|format(item.price) }}</small></div>
-                <b class="text-red">${{ "%.2f"|format(item.price*item.quantity) }}</b>
-            </div>
-            {% endfor %}
-            <div style="text-align:right;margin-top:15px;font-size:18px;font-weight:700">{% if lang == 'zh' %}合计{% else %}Total{% endif %}: <span class="text-red">${{ "%.2f"|format(order.total_amount) }}</span></div>
-        </div>
-        <div style="width:300px;background:#fff;border-radius:4px;padding:20px;align-self:flex-start">
-            <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">{% if lang == 'zh' %}订单信息{% else %}Info{% endif %}</h3>
-            <p style="font-size:13px;margin:6px 0"><b>{% if lang == 'zh' %}状态{% else %}Status{% endif %}:</b> <span class="status-badge status-{{ order.status }}">{{ order.status }}</span></p>
-            <p style="font-size:13px;margin:6px 0"><b>{% if lang == 'zh' %}日期{% else %}Date{% endif %}:</b> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-            <p style="font-size:13px;margin:6px 0"><b>{% if lang == 'zh' %}联系人{% else %}Contact{% endif %}:</b> {{ order.contact_name }}</p>
-            <p style="font-size:13px;margin:6px 0"><b>Email:</b> {{ order.contact_email }}</p>
-            <p style="font-size:13px;margin:6px 0"><b>{% if lang == 'zh' %}地址{% else %}Address{% endif %}:</b> {{ order.shipping_address }}</p>
-        </div>
-    </div>
+{% block content %}<div class="container"><div class="bcrumb"><a href="{{ url_for('orders') }}">{{ t("my_orders") }}</a> &gt; #{{ order.id }}</div>
+<div style="display:flex;gap:20px;margin:20px 0"><div style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+<h3 style="font-size:16px;font-weight:700;margin-bottom:14px">Items</h3>
+{% for item in order.items %}<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+<img src="{{ item.product.image_url or 'https://placehold.co/60/f1f5f9/94a3b8' }}" width="56" style="border:1px solid var(--border);border-radius:4px">
+<div style="flex:1"><b>{{ item.product.name_en }}</b><br><small style="color:var(--gray)">x{{ item.quantity }} x ${{ "%.2f"|format(item.price) }}</small></div>
+<b style="color:var(--blue)">${{ "%.2f"|format(item.price*item.quantity) }}</b></div>{% endfor %}
+<div style="text-align:right;margin-top:14px;font-size:18px;font-weight:700">Total: <span style="color:var(--blue)">${{ "%.2f"|format(order.total_amount) }}</span></div>
 </div>
-{% endblock %}
+<div style="width:280px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;align-self:flex-start">
+<h3 style="font-size:15px;font-weight:700;margin-bottom:10px">Info</h3>
+<p style="font-size:13px;margin:6px 0"><b>Status:</b> <span class="status status-{{ order.status }}">{{ order.status }}</span></p>
+<p style="font-size:13px;margin:6px 0"><b>Date:</b> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+<p style="font-size:13px;margin:6px 0"><b>Contact:</b> {{ order.contact_name }}</p>
+<p style="font-size:13px;margin:6px 0"><b>Email:</b> {{ order.contact_email }}</p>
+<p style="font-size:13px;margin:6px 0"><b>Address:</b> {{ order.shipping_address }}</p>
+</div></div></div>{% endblock %}

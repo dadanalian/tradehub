@@ -1,53 +1,25 @@
 {% extends "base.html" %}
-{% block title %}{{ '产品列表' if lang == 'zh' else 'Products' }}{% endblock %}
+{% block title %}{{ t("products") }}{% endblock %}
 {% block content %}
-<div class="container">
-    <div class="breadcrumb"><a href="/">{% if lang == 'zh' %}首页{% else %}Home{% endif %}</a> &gt; {% if search %}{% if lang == 'zh' %}搜索{% else %}Search{% endif %}: "{{ search }}"{% else %}{% if lang == 'zh' %}全部产品{% else %}All Products{% endif %}{% endif %}</div>
-    <div style="display:flex;gap:20px">
-        <div style="width:220px;background:#fff;border-radius:4px;padding:15px">
-            <h4 style="font-size:15px;margin-bottom:12px">{% if lang == 'zh' %}分类{% else %}Categories{% endif %}</h4>
-            <a href="{{ url_for('products') }}" style="display:block;padding:8px 12px;color:{{ 'var(--jd-red)' if not current_category else '#666' }};font-size:13px">{% if lang == 'zh' %}全部分类{% else %}All{% endif %}</a>
-            {% for cat in categories %}
-            <a href="{{ url_for('products', category=cat.slug) }}" style="display:block;padding:8px 12px;color:{{ 'var(--jd-red)' if current_category==cat.slug else '#666' }};font-size:13px">{{ cat.name_zh if lang == 'zh' else cat.name_en }}</a>
-            {% endfor %}
-        </div>
-        <div style="flex:1">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
-                <span style="font-size:18px;font-weight:700">{{ '搜索结果' if search else '全部产品' if lang == 'zh' else 'Results' if search else 'All Products' }}</span>
-                <select onchange="location=this.value" style="padding:6px 12px;border:1px solid var(--jd-border);border-radius:4px;font-size:13px">
-                    <option value="{{ url_for('products',search=search,category=current_category,sort='newest') }}" {{ 'selected' if sort=='newest' }}>{% if lang == 'zh' %}最新{% else %}Newest{% endif %}</option>
-                    <option value="{{ url_for('products',search=search,category=current_category,sort='price_asc') }}" {{ 'selected' if sort=='price_asc' }}>{% if lang == 'zh' %}价格从低到高{% else %}Price Low-High{% endif %}</option>
-                    <option value="{{ url_for('products',search=search,category=current_category,sort='price_desc') }}" {{ 'selected' if sort=='price_desc' }}>{% if lang == 'zh' %}价格从高到低{% else %}Price High-Low{% endif %}</option>
-                </select>
-            </div>
-            {% if products.items %}
-            <div class="product-grid">
-                {% for p in products.items %}
-                <a href="{{ url_for('product_detail', product_id=p.id) }}" class="product-card">
-                    <div class="img-wrap">
-                        <img src="{{ p.image_url or 'https://placehold.co/400x400/f5f5f5/ccc?text=Product' }}" alt="{{ p.name_en }}">
-                        {% if p.moq > 1 %}<span class="badge-moq">MOQ:{{ p.moq }}</span>{% endif %}
-                    </div>
-                    <div class="info">
-                        <div class="name">{{ p.name_zh if lang == 'zh' else p.name_en }}</div>
-                        <div class="price-row">
-                            <span class="price-symbol">$</span><span class="price">{{ "%.2f"|format(p.price) }}</span>
-                        </div>
-                    </div>
-                </a>
-                {% endfor %}
-            </div>
-            {% if products.pages > 1 %}
-            <div class="pagination">
-                {% for p in range(1, products.pages+1) %}
-                <a href="{{ url_for('products',page=p,search=search,category=current_category,sort=sort) }}" class="{{ 'active' if p==products.page }}">{{ p }}</a>
-                {% endfor %}
-            </div>
-            {% endif %}
-            {% else %}
-            <div class="empty-state"><div class="empty-icon">&#x1f50d;</div><h3>{% if lang == 'zh' %}未找到产品{% else %}No products found{% endif %}</h3></div>
-            {% endif %}
-        </div>
-    </div>
+<div class="container"><div class="bcrumb"><a href="/">{{ t("home") }}</a> &gt; {% if search %}{{ t("search") }}: "{{ search }}"{% else %}{{ t("products") }}{% endif %}</div>
+<div style="display:flex;gap:20px">
+<div style="width:200px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px;flex-shrink:0">
+<h4 style="font-size:14px;font-weight:700;margin-bottom:10px">{{ t("categories") }}</h4>
+<a href="{{ url_for('products') }}" style="display:block;padding:6px 10px;font-size:13px;color:{{ 'var(--blue)' if not current_category else 'var(--gray)' }};border-radius:4px">{{ t("all_categories") }}</a>
+{% for cat in categories %}<a href="{{ url_for('products', category=cat.slug) }}" style="display:block;padding:6px 10px;font-size:13px;color:{{ 'var(--blue)' if current_category==cat.slug else 'var(--gray)' }};border-radius:4px">{{ cat.name_en }}</a>{% endfor %}
 </div>
-{% endblock %}
+<div style="flex:1">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+<span style="font-size:17px;font-weight:700">{{ t("products") }}</span>
+<select onchange="location=this.value" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+<option value="{{ url_for('products',search=search,category=current_category,sort='newest') }}" {{ 'selected' if sort=='newest' }}>{{ t("sort_newest") }}</option>
+<option value="{{ url_for('products',search=search,category=current_category,sort='price_asc') }}" {{ 'selected' if sort=='price_asc' }}>{{ t("sort_price_asc") }}</option>
+<option value="{{ url_for('products',search=search,category=current_category,sort='price_desc') }}" {{ 'selected' if sort=='price_desc' }}>{{ t("sort_price_desc") }}</option>
+</select></div>
+{% if products.items %}<div class="product-grid">{% for p in products.items %}
+<a href="{{ url_for('product_detail', product_id=p.id) }}" class="prod-card">
+<div class="img-wrap" style="position:relative"><img src="{{ p.image_url or 'https://placehold.co/400x400/f1f5f9/94a3b8?text=Product' }}" alt="{{ p.name_en }}">{% if p.moq>1 %}<span class="moq-badge">MOQ:{{ p.moq }}</span>{% endif %}</div>
+<div class="info"><div class="name">{{ p.name_en }}</div><div class="price"><small>$</small>{{ "%.2f"|format(p.price) }}</div></div></a>{% endfor %}</div>
+{% if products.pages>1 %}<div class="pager">{% for p in range(1,products.pages+1) %}<a href="{{ url_for('products',page=p,search=search,category=current_category,sort=sort) }}" class="{{ 'active' if p==products.page }}">{{ p }}</a>{% endfor %}</div>{% endif %}
+{% else %}<div class="empty"><div class="icon">🔍</div><h3>{{ t("no_products") }}</h3></div>{% endif %}
+</div></div></div>{% endblock %}

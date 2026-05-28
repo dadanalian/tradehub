@@ -1,41 +1,16 @@
 {% extends "base.html" %}
-{% block title %}{{ '购物车' if lang == 'zh' else 'Cart' }}{% endblock %}
+{% block title %}{{ t("cart") }}{% endblock %}
 {% block content %}
-<div class="container">
-    <h2 style="font-size:22px;font-weight:700;margin:20px 0">{% if lang == 'zh' %}购物车{% else %}Shopping Cart{% endif %}</h2>
-    {% if items %}
-    <table class="cart-table">
-        <thead><tr><th>{% if lang == 'zh' %}商品{% else %}Product{% endif %}</th><th>{% if lang == 'zh' %}单价{% else %}Price{% endif %}</th><th>{% if lang == 'zh' %}数量{% else %}Qty{% endif %}</th><th>{% if lang == 'zh' %}小计{% else %}Subtotal{% endif %}</th><th></th></tr></thead>
-        <tbody>
-            {% for item in items %}
-            <tr id="row-{{ item.id }}">
-                <td><div class="product-cell"><img src="{{ item.product.image_url or 'https://placehold.co/80/f5f5f5/ccc' }}"><div class="name">{{ item.product.name_zh if lang == 'zh' else item.product.name_en }}</div></div></td>
-                <td>${{ "%.2f"|format(item.product.price) }}</td>
-                <td><div class="cart-qty-inline"><button onclick="updateQty({{ item.id }}, -1)">-</button><input id="qty-{{ item.id }}" value="{{ item.quantity }}" readonly><button onclick="updateQty({{ item.id }}, 1)">+</button></div></td>
-                <td class="text-red fw-bold" id="sub-{{ item.id }}">${{ "%.2f"|format(item.product.price * item.quantity) }}</td>
-                <td><form action="{{ url_for('cart_remove', item_id=item.id) }}" method="POST"><button style="border:none;background:none;color:var(--jd-gray);cursor:pointer;font-size:18px">&times;</button></form></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <div class="cart-summary">
-        <span class="total">{% if lang == 'zh' %}合计{% else %}Total{% endif %}: <span class="amount" id="cart-total">${{ "%.2f"|format(total) }}</span></span>
-        <a href="{{ url_for('checkout') }}" class="checkout-btn">{% if lang == 'zh' %}去结算{% else %}Checkout{% endif %}</a>
-    </div>
-    {% else %}
-    <div class="empty-state"><div class="empty-icon">&#x1f6d2;</div><h3>{% if lang == 'zh' %}购物车是空的{% else %}Cart is empty{% endif %}</h3><a href="{{ url_for('products') }}" class="btn">{% if lang == 'zh' %}去逛逛{% else %}Shop Now{% endif %}</a></div>
-    {% endif %}
-</div>
-{% endblock %}
-{% block extra_scripts %}
-<script>
-async function updateQty(id, delta) {
-    let inp = document.getElementById('qty-'+id);
-    let v = Math.max(1, parseInt(inp.value) + delta);
-    inp.value = v;
-    let r = await fetch('/cart/update/'+id, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({quantity:v})});
-    let d = await r.json();
-    if(d.success) { document.getElementById('sub-'+id).textContent = '$'+d.subtotal; document.getElementById('cart-total').textContent = '$'+d.total; }
-}
-</script>
-{% endblock %}
+<div class="container"><h2 style="font-size:22px;font-weight:700;margin:20px 0">{{ t("cart") }}</h2>
+{% if items %}
+<table class="cart-table"><thead><tr><th>{{ t("products") }}</th><th>{{ t("price") }}</th><th>{{ t("qty") }}</th><th>{{ t("subtotal") }}</th><th></th></tr></thead><tbody>
+{% for item in items %}<tr id="row-{{ item.id }}"><td><div class="cart-prod"><img src="{{ item.product.image_url or 'https://placehold.co/80/f1f5f9/94a3b8' }}"><span>{{ item.product.name_en }}</span></div></td>
+<td>${{ "%.2f"|format(item.product.price) }}</td>
+<td><div class="qty-control" style="margin:0"><button onclick="updateQty({{ item.id }},-1)">-</button><input id="qty-{{ item.id }}" value="{{ item.quantity }}" readonly><button onclick="updateQty({{ item.id }},1)">+</button></div></td>
+<td class="fw-bold" style="color:var(--blue)" id="sub-{{ item.id }}">${{ "%.2f"|format(item.product.price*item.quantity) }}</td>
+<td><form action="{{ url_for('cart_remove', item_id=item.id) }}" method="POST"><button style="border:none;background:none;font-size:18px;cursor:pointer;color:var(--gray)">&times;</button></form></td></tr>{% endfor %}
+</tbody></table>
+<div class="cart-summary"><span class="total-label">{{ t("total") }}:</span><span class="total-amount" id="cart-total">${{ "%.2f"|format(total) }}</span><a href="{{ url_for('checkout') }}" class="btn-blue" style="padding:14px 40px;font-size:16px">{{ t("checkout") }}</a></div>
+{% else %}<div class="empty"><div class="icon">🛒</div><h3>{{ t("empty_cart") }}</h3><a href="{{ url_for('products') }}" class="btn">{{ t("empty_cart_btn") }}</a></div>{% endif %}
+</div>{% endblock %}
+{% block extra_scripts %}<script>async function updateQty(i,d){let e=document.getElementById('qty-'+i);let v=Math.max(1,parseInt(e.value)+d);e.value=v;let r=await fetch('/cart/update/'+i,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({quantity:v})});let j=await r.json();if(j.success){document.getElementById('sub-'+i).textContent='$'+j.subtotal;document.getElementById('cart-total').textContent='$'+j.total}}</script>{% endblock %}

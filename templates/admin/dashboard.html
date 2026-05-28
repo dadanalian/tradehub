@@ -1,37 +1,16 @@
-{% extends "base.html" %}
-{% block title %}Admin{% endblock %}
-{% block content %}
-<div class="container">
-    <div class="admin-layout">
-        <div class="admin-sidebar">
-            <a href="{{ url_for('admin') }}" class="active">&#x1f4ca; Dashboard</a>
-            <a href="{{ url_for('admin_products') }}">&#x1f4e6; Products</a>
-            <a href="{{ url_for('admin_orders') }}">&#x1f4cb; Orders</a>
-            <a href="{{ url_for('admin_inquiries') }}">&#x1f4e9; Inquiries</a>
-        </div>
-        <div class="admin-main">
-            <h3 style="font-size:20px;font-weight:700;margin-bottom:20px">Dashboard</h3>
-            <div class="stat-cards">
-                <div class="stat-card red"><div class="num">{{ stats.products }}</div><div class="label">Products</div></div>
-                <div class="stat-card blue"><div class="num">{{ stats.orders }}</div><div class="label">Orders</div></div>
-                <div class="stat-card green"><div class="num">{{ stats.users }}</div><div class="label">Users</div></div>
-                <div class="stat-card orange"><div class="num">{{ stats.inquiries }}</div><div class="label">New Inquiries</div></div>
-            </div>
-            <div style="display:flex;gap:20px">
-                <div style="flex:1;background:#fff;border-radius:4px;padding:20px">
-                    <h4 style="font-size:14px;font-weight:700;margin-bottom:12px">Recent Orders</h4>
-                    {% for o in stats.recent_orders %}
-                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--jd-border);font-size:13px"><span>#{{ o.id }} {{ o.contact_name }}</span><span>${{ "%.2f"|format(o.total_amount) }}</span><span class="status-badge status-{{ o.status }}">{{ o.status }}</span></div>
-                    {% endfor %}
-                </div>
-                <div style="flex:1;background:#fff;border-radius:4px;padding:20px">
-                    <h4 style="font-size:14px;font-weight:700;margin-bottom:12px">New Inquiries</h4>
-                    {% for i in stats.recent_inquiries %}
-                    <div style="padding:8px 0;border-bottom:1px solid var(--jd-border);font-size:13px"><b>{{ i.name }}</b> ({{ i.email }})<br><span style="color:var(--jd-gray)">{{ i.message[:60] }}...</span></div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
+{% extends "base.html" %}{% block title %}Admin{% endblock %}{% block content %}<div class="container"><div class="admin-layout">
+<div class="admin-sidebar">
+<a href="{{ url_for('admin') }}" class="{{ 'active' if request.endpoint=='admin' }}">Dashboard</a>
+<a href="{{ url_for('admin_products') }}" class="{{ 'active' if 'product' in request.endpoint }}">Products</a>
+<a href="{{ url_for('admin_orders') }}" class="{{ 'active' if 'order' in request.endpoint }}">Orders</a>
+<a href="{{ url_for('admin_inquiries') }}" class="{{ 'active' if 'inquir' in request.endpoint }}">Inquiries</a>
 </div>
-{% endblock %}
+<div class="admin-main"><h3 style="font-size:20px;font-weight:700;margin-bottom:16px">Dashboard</h3>
+<div class="stat-grid"><div class="stat-card"><div class="num" style="color:var(--blue)">{{ stats.products }}</div><div class="lbl">Products</div></div>
+<div class="stat-card"><div class="num" style="color:#10b981">{{ stats.orders }}</div><div class="lbl">Orders</div></div>
+<div class="stat-card"><div class="num" style="color:#f59e0b">{{ stats.users }}</div><div class="lbl">Users</div></div>
+<div class="stat-card"><div class="num" style="color:#ef4444">{{ stats.inquiries }}</div><div class="lbl">New Inquiries</div></div></div>
+<div style="display:flex;gap:16px"><div style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px">
+<h4 style="font-size:14px;font-weight:700;margin-bottom:10px">Recent Orders</h4>{% for o in stats.recent_orders %}<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><span>#{{ o.id }} {{ o.contact_name }}</span><span style="font-weight:600">${{ "%.2f"|format(o.total_amount) }}</span><span class="status status-{{ o.status }}">{{ o.status }}</span></div>{% endfor %}</div>
+<div style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px"><h4 style="font-size:14px;font-weight:700;margin-bottom:10px">New Inquiries</h4>{% for i in stats.recent_inquiries %}<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><b>{{ i.name }}</b> ({{ i.email }})<br><small style="color:var(--gray)">{{ i.message[:60] }}...</small></div>{% endfor %}</div></div>
+</div></div></div>{% endblock %}
