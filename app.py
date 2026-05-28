@@ -502,11 +502,8 @@ def create_app():
         content = request.form.get("content")
         if not content or not reply_to_email:
             return redirect(url_for("merchant_messages"))
-        # Find the last message from this customer to get their session_id
-        last_msg = Message.query.filter_by(sender_email=reply_to_email, is_from_merchant=False).order_by(Message.created_at.desc()).first()
-        session_id = last_msg.session_id if last_msg else reply_to_email
         msg = Message(sender_email="merchant@tradehub.com", sender_name="Merchant",
-                      content=content, is_from_merchant=True, is_read=True, session_id=session_id)
+                      content="[Re: " + reply_to_email + "] " + content, is_from_merchant=True, is_read=True)
         db.session.add(msg)
         db.session.commit()
         flash("Reply sent", "success")
@@ -515,14 +512,16 @@ def create_app():
     @app.route("/api/messages", methods=["POST"])
     def api_send_message():
         data = request.json
+        email = data.get("email", "anonymous")
+        content = data.get("content", "")
+        if not content:
+            return jsonify({"error": "empty"}), 400
         msg = Message(
-            sender_email=data.get("email", "anonymous"),
+            sender_email=email,
             sender_name=data.get("name", "Customer"),
-            content=data.get("content", ""),
+            content=content,
             is_from_merchant=False,
-            is_read=False,
-            order_id=data.get("order_id"),
-            session_id=data.get("session", "")
+            is_read=False
         )
         db.session.add(msg)
         db.session.commit()
@@ -536,18 +535,35 @@ def create_app():
         push_wx(f"New message from {msg.sender_name}", f"{msg.sender_name} ({msg.sender_email})\n\n{msg.content[:300]}\n\nReply: https://shijingyuan.pythonanywhere.com/merchant/messages")
         notify_merchant("new_message", f"New message from {msg.sender_name}",
                         f"From: {msg.sender_name} ({msg.sender_email})\n\n{msg.content[:200]}")
+        try:
+            import urllib.request, urllib.parse
+            push_data = urllib.parse.urlencode({"title": f"New message from {msg.sender_name}", "desp": f"{msg.sender_name} ({msg.sender_email})\n\n{msg.content[:300]}"}).encode()
+            urllib.request.urlopen(urllib.request.Request("https://sctapi.ftqq.com/SCT356107TdAGEbh1QAfmdcjQxlsJGvQQc.send", data=push_data, method="POST"), timeout=8)
+        except:
+            pass
         return jsonify({"success": True})
 
-    @app.route("/api/messages/<session_id>")
-    def api_get_messages(session_id):
-        # Get messages with this session_id
-        msgs = Message.query.filter_by(session_id=session_id).order_by(Message.created_at.asc()).all()
+    @app.route("/api/messages/<email>")
+    def api_get_messages(email):
+        msgs = Message.query.filter(
+            db.or_(Message.sender_email == email, Message.sender_email.like("%merchant%"))
+        ).filter(
+            db.or_(Message.sender_email == email, Message.content.like("%"))
+        ).order_by(Message.created_at.asc()).all()
+        # Simpler: get all recent messages
+        msgs = Message.query.order_by(Message.created_at.desc()).limit(50).all()
+        msgs.reverse()
         return jsonify([{
             "content": m.content,
             "is_from_merchant": m.is_from_merchant,
             "created_at": m.created_at.strftime("%H:%M"),
             "sender_name": m.sender_name
         } for m in msgs])
+
+    @app.route("/api/messages/all")
+    def api_messages_all():
+        msgs = Message.query.order_by(Message.created_at.asc()).limit(100).all()
+        return jsonify([{"content": m.content, "is_from_merchant": m.is_from_merchant, "created_at": m.created_at.strftime("%H:%M"), "sender_name": m.sender_name} for m in msgs])
 
     @app.route("/api/messages/unread")
     @login_required

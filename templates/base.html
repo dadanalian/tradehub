@@ -73,58 +73,37 @@
 
 <!-- Chat Widget -->
 <script>
-var chatSessionId = localStorage.getItem('chat_session') || ('chat_' + Date.now() + '_' + Math.random().toString(36).substr(2,8));
-localStorage.setItem('chat_session', chatSessionId);
-
 function toggleChat(){
     let p=document.getElementById('chat-popup');
-    if(p.style.display=='none'||!p.style.display){
-        p.style.display='block';
-        loadHistory();
-    }else{
-        p.style.display='none';
-    }
+    p.style.display = (p.style.display=='none'||!p.style.display) ? 'block' : 'none';
+    if(p.style.display=='block') loadChat();
 }
-
-async function loadHistory(){
+async function loadChat(){
     let d=document.getElementById('chat-messages');
-    d.innerHTML='<div style="text-align:center;padding:10px;color:#94a3b8;font-size:12px">Loading...</div>';
     try{
-        let r=await fetch('/api/messages/'+chatSessionId);
+        let r=await fetch('/api/messages/all');
         let msgs=await r.json();
         d.innerHTML='';
-        if(msgs.length==0){
-            d.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">Send us a message! We reply within minutes.</div>';
-        }
         msgs.forEach(m=>{
-            let cls=m.is_from_merchant?'margin:6px 0':'text-align:right;margin:6px 0';
-            let bg=m.is_from_merchant?'background:var(--light-gray)':'background:var(--blue);color:#fff';
-            let side=m.is_from_merchant?'margin-right:40px':'margin-left:40px';
-            d.innerHTML+='<div style="'+cls+'"><div style="display:inline-block;'+bg+';padding:8px 12px;border-radius:12px;font-size:12px;max-width:80%;'+side+'">'+m.content.replace(/</g,'&lt;')+'<div style="font-size:9px;opacity:0.6;margin-top:2px">'+m.created_at+'</div></div></div>';
+            let side=m.is_from_merchant?'':'justify-content-end';
+            let bg=m.is_from_merchant?'background:#f1f5f9;color:#333':'background:#2563eb;color:#fff';
+            d.innerHTML+='<div class="d-flex '+side+'" style="margin:4px 0"><div style="max-width:80%;padding:8px 12px;border-radius:12px;font-size:12px;'+bg+'">'+m.content.replace(/</g,'&lt;')+'<div style="font-size:9px;opacity:0.6;margin-top:2px">'+m.created_at+'</div></div></div>';
         });
         d.scrollTop=d.scrollHeight;
-    }catch(e){
-        console.log(e);
-        d.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">Send us a message! We reply within minutes.</div>';
-    }
+    }catch(e){}
 }
-
 async function sendChat(){
     let name=document.getElementById('chat-name').value.trim()||'Customer';
     let email=document.getElementById('chat-email').value.trim()||'anonymous@email.com';
     let content=document.getElementById('chat-input').value.trim();
     if(!content)return;
     document.getElementById('chat-input').value='';
-    await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,content:content,session:chatSessionId})});
-    loadHistory();
+    try{
+        await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,content:content})});
+        loadChat();
+    }catch(e){}
 }
-
-// Poll for new messages every 10 seconds
-setInterval(function(){
-    if(document.getElementById('chat-popup').style.display=='block'){
-        loadHistory();
-    }
-}, 10000);
+setInterval(function(){if(document.getElementById('chat-popup').style.display=='block')loadChat()},8000);
 </script>
 
 <div id="chat-widget" style="position:fixed;bottom:20px;right:20px;z-index:9999">
