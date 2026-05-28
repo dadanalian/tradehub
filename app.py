@@ -605,13 +605,15 @@ def create_app():
         result = subprocess.run(["git", "pull", "origin", "master"], capture_output=True, text=True, cwd=os.path.dirname(os.path.abspath(__file__)))
         try:
             db.create_all()
-            # Add session_id column if missing
-            try:
-                db.session.execute(db.text("ALTER TABLE messages ADD COLUMN session_id VARCHAR(100)"))
-                db.session.commit()
-            except:
-                pass
             auto_seed()
+        except:
+            pass
+        # Ensure Message table matches model
+        try:
+            db.session.execute(db.text("DROP TABLE IF EXISTS messages"))
+            db.create_all()
+        except:
+            pass
             admin = User.query.filter_by(username="admin").first()
             if admin:
                 admin.email = "1966899806@qq.com"
@@ -631,13 +633,15 @@ def create_app():
         # Re-seed
         try:
             db.create_all()
-            # Add session_id column if missing
-            try:
-                db.session.execute(db.text("ALTER TABLE messages ADD COLUMN session_id VARCHAR(100)"))
-                db.session.commit()
-            except:
-                pass
             auto_seed()
+        except:
+            pass
+        # Ensure Message table matches model
+        try:
+            db.session.execute(db.text("DROP TABLE IF EXISTS messages"))
+            db.create_all()
+        except:
+            pass
         except:
             pass
         # Update admin credentials
