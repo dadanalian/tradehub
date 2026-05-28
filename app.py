@@ -558,7 +558,13 @@ def create_app():
             auto_seed()
         except:
             pass
-        return f"<pre>Git Pull:\n{result.stdout}\n{result.stderr}\n\nSeed: Done.\n\n<a href='/'>Go to site</a></pre>"
+        # Update admin credentials
+        admin = User.query.filter_by(username="admin").first()
+        if admin:
+            admin.email = "1966899806@qq.com"
+            admin.set_password("smy..521")
+            db.session.commit()
+        return f"<pre>Git Pull:\n{result.stdout}\n{result.stderr}\n\nSeed: Done. Admin updated.\n\n<a href='/'>Go to site</a></pre>"
 
     return app
 
@@ -589,8 +595,8 @@ def get_chatbot_response(message):
 def auto_seed():
     if User.query.first() is not None:
         return
-    admin = User(username="admin", email="admin@tradehub.com", company="TradeHub Inc", phone="+86-400-888-9999")
-    admin.set_password("admin123")
+    admin = User(username="admin", email="1966899806@qq.com", company="TradeHub Inc", phone="+86-400-888-9999")
+    admin.set_password("smy..521")
     admin.is_admin = True
     db.session.add(admin)
     buyer = User(username="buyer", email="buyer@test.com", company="Global Trade Co", phone="+1-555-0123")
