@@ -502,8 +502,11 @@ def create_app():
         content = request.form.get("content")
         if not content or not reply_to_email:
             return redirect(url_for("merchant_messages"))
-        msg = Message(sender_email=reply_to_email, sender_name="Merchant",
-                      content=content, is_from_merchant=True, is_read=True, session_id=reply_to_email)
+        # Find the last message from this customer to get their session_id
+        last_msg = Message.query.filter_by(sender_email=reply_to_email, is_from_merchant=False).order_by(Message.created_at.desc()).first()
+        session_id = last_msg.session_id if last_msg else reply_to_email
+        msg = Message(sender_email="merchant@tradehub.com", sender_name="Merchant",
+                      content=content, is_from_merchant=True, is_read=True, session_id=session_id)
         db.session.add(msg)
         db.session.commit()
         flash("Reply sent", "success")
@@ -537,9 +540,8 @@ def create_app():
 
     @app.route("/api/messages/<session_id>")
     def api_get_messages(session_id):
-        msgs = Message.query.filter_by(sender_email=session_id).all()
-        # Also get merchant replies for this session
-        # Get all messages where sender_email is this session, plus merchant replies that don't have a session
+        # Get messages with this session_id
+        msgs = Message.query.filter_by(session_id=session_id).order_by(Message.created_at.asc()).all()
         return jsonify([{
             "content": m.content,
             "is_from_merchant": m.is_from_merchant,
