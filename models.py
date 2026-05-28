@@ -111,6 +111,7 @@ class Message(db.Model):
     is_from_merchant = db.Column(db.Boolean, default=False)
     is_read = db.Column(db.Boolean, default=False)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
+    session_id = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     order = db.relationship('Order', backref='messages', lazy=True)
 

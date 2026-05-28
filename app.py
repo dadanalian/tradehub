@@ -389,28 +389,27 @@ def create_app():
         settings = MerchantSettings.query.first()
         if settings and settings.notify_email:
             try:
-                send_notification_email(settings.notify_email, title, content)
+                send_email(settings.notify_email, title, content)
             except:
-                pass  # Email failed silently, notification still in DB
+                pass
 
-    def send_notification_email(to_email, subject, body):
+    def send_email(to_email, subject, body):
+        """Send email via QQ SMTP"""
         import smtplib
         from email.mime.text import MIMEText
-        settings = MerchantSettings.query.first()
-        if not settings or not settings.notify_email:
-            return
-        msg = MIMEText(body, "plain", "utf-8")
-        msg["Subject"] = subject
-        msg["From"] = "TradeHub <tradehub@notification.com>"
-        msg["To"] = to_email
-        # Use QQ SMTP as default
         try:
+            msg = MIMEText(body, "plain", "utf-8")
+            msg["Subject"] = subject
+            msg["From"] = "TradeHub <1966899806@qq.com>"
+            msg["To"] = to_email
             s = smtplib.SMTP_SSL("smtp.qq.com", 465, timeout=10)
-            s.login("1966899806@qq.com", "")  # Will be configured via settings
+            s.login("1966899806@qq.com", "")  # SMTP password needs to be configured
             s.sendmail("1966899806@qq.com", [to_email], msg.as_string())
             s.quit()
-        except:
-            pass  # SMTP not configured yet
+            return True
+        except Exception as e:
+            print(f"Email failed: {e}")
+            return False
 
 
     # ===== Merchant Dashboard =====
@@ -489,8 +488,8 @@ def create_app():
         content = request.form.get("content")
         if not content or not reply_to_email:
             return redirect(url_for("merchant_messages"))
-        msg = Message(sender_email="merchant@tradehub.com", sender_name="Merchant",
-                      content=content, is_from_merchant=True, is_read=True)
+        msg = Message(sender_email=reply_to_email, sender_name="Merchant",
+                      content=content, is_from_merchant=True, is_read=True, session_id=reply_to_email)
         db.session.add(msg)
         db.session.commit()
         flash("Reply sent", "success")
@@ -505,14 +504,33 @@ def create_app():
             content=data.get("content", ""),
             is_from_merchant=False,
             is_read=False,
-            order_id=data.get("order_id")
+            order_id=data.get("order_id"),
+            session_id=data.get("session", "")
         )
         db.session.add(msg)
         db.session.commit()
-        # Notify merchant
+        # Try email notification
+        try:
+            settings = MerchantSettings.query.first()
+            if settings and settings.notify_email:
+                send_email(settings.notify_email, f"New message from {msg.sender_name}", f"From: {msg.sender_name} ({msg.sender_email})\n\n{msg.content}\n\nReply at: https://shijingyuan.pythonanywhere.com/merchant/messages")
+        except:
+            pass
         notify_merchant("new_message", f"New message from {msg.sender_name}",
                         f"From: {msg.sender_name} ({msg.sender_email})\n\n{msg.content[:200]}")
         return jsonify({"success": True})
+
+    @app.route("/api/messages/<session_id>")
+    def api_get_messages(session_id):
+        msgs = Message.query.filter_by(sender_email=session_id).all()
+        # Also get merchant replies for this session
+        # Get all messages where sender_email is this session, plus merchant replies that don't have a session
+        return jsonify([{
+            "content": m.content,
+            "is_from_merchant": m.is_from_merchant,
+            "created_at": m.created_at.strftime("%H:%M"),
+            "sender_name": m.sender_name
+        } for m in msgs])
 
     @app.route("/api/messages/unread")
     @login_required
