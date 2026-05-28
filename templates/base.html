@@ -73,84 +73,82 @@
 
 <!-- Chat Widget -->
 <script>
-// ===== CHAT MODULE =====
-(function(){
-    var CHAT_SESSION = localStorage.getItem('chat_session') || ('chat_' + Date.now() + '_' + Math.random().toString(36).substr(2,6));
-    localStorage.setItem('chat_session', CHAT_SESSION);
+// ===== SIMPLE CHAT WIDGET =====
+var CHAT_SESSION = localStorage.getItem('chat_sid') || ('s' + Date.now());
+localStorage.setItem('chat_sid', CHAT_SESSION);
 
-    window.toggleChat = function(){
-        var p = document.getElementById('chat-popup');
-        p.style.display = (p.style.display == 'none' || !p.style.display) ? 'block' : 'none';
-        if (p.style.display == 'block') loadChat();
-    };
+function toggleChat() {
+    var p = document.getElementById('chat-popup');
+    if (p.style.display === 'none' || p.style.display === '') {
+        p.style.display = 'block';
+        loadChat();
+    } else {
+        p.style.display = 'none';
+    }
+}
 
-    window.loadChat = async function(){
-        var d = document.getElementById('chat-messages');
-        try {
-            var r = await fetch('/api/messages/all?session_id=' + CHAT_SESSION);
-            var msgs = await r.json();
+function esc(s) {
+    if (!s) return '';
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function loadChat() {
+    var d = document.getElementById('chat-messages');
+    fetch('/api/messages/all?session_id=' + CHAT_SESSION)
+        .then(function(r) { return r.json(); })
+        .then(function(msgs) {
             d.innerHTML = '';
-            msgs.forEach(function(m){
+            msgs.forEach(function(m) {
                 if (m.is_from_merchant) {
-                    // Merchant on LEFT (gray bubble)
-                    d.innerHTML += '<div class="cb-row cb-left"><div class="cb-avatar cb-avatar-m">M</div><div class="cb-bubble-wrap"><div class="cb-name">Merchant</div><div class="cb-bubble cb-gray">' + esc(m.content) + '</div><div class="cb-time">' + m.created_at + '</div></div></div>';
+                    // MERCHANT on LEFT
+                    d.innerHTML += '<div style="display:flex;align-items:flex-start;gap:6px;margin:8px 0"><div style="width:26px;height:26px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">M</div><div style="max-width:78%"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px">Merchant</div><div style="padding:8px 12px;border-radius:14px 14px 14px 2px;background:#e2e8f0;color:#334155;font-size:12px;line-height:1.4;word-break:break-word">'+esc(m.content)+'</div><div style="font-size:9px;color:#94a3b8;margin-top:2px">'+m.created_at+'</div></div></div>';
                 } else {
-                    // Customer on RIGHT (blue bubble)
-                    var status = m.is_read ? '<span class="cb-read">&#10003;&#10003; Read</span>' : '<span class="cb-sent">&#10003; Sent</span>';
-                    d.innerHTML += '<div class="cb-row cb-right"><div class="cb-bubble-wrap cb-right-align"><div class="cb-name">' + esc(m.sender_name) + '</div><div class="cb-bubble cb-blue">' + esc(m.content) + '</div><div class="cb-time">' + m.created_at + ' ' + status + '</div></div></div>';
+                    // CUSTOMER on RIGHT
+                    var st = m.is_read ? '<span style="color:#34d399;font-size:9px">&#10003;&#10003; Read</span>' : '<span style="color:#94a3b8;font-size:9px">&#10003; Sent</span>';
+                    d.innerHTML += '<div style="display:flex;justify-content:flex-end;margin:8px 0"><div style="max-width:78%;text-align:right"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px">'+esc(m.sender_name)+'</div><div style="padding:8px 12px;border-radius:14px 14px 2px 14px;background:#2563eb;color:#fff;font-size:12px;line-height:1.4;word-break:break-word;display:inline-block;text-align:left">'+esc(m.content)+'</div><div style="font-size:9px;color:#94a3b8;margin-top:2px">'+m.created_at+' '+st+'</div></div></div>';
                 }
             });
             d.scrollTop = d.scrollHeight;
-        } catch(e) {}
-    };
+        })
+        .catch(function(){});
+}
 
-    window.sendChat = async function(){
-        var name = document.getElementById('chat-name').value.trim() || 'Customer';
-        var email = document.getElementById('chat-email').value.trim() || 'customer@email.com';
-        var content = document.getElementById('chat-input').value.trim();
-        if (!content) return;
-        document.getElementById('chat-input').value = '';
-        try {
-            await fetch('/api/messages', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({sender_name: name, sender_email: email, content: content, session_id: CHAT_SESSION})
-            });
-            loadChat();
-            // Push to WeChat
-            var notifyUrl = 'https://sctapi.ftqq.com/SCT356107TdAGEbh1QAfmdcjQxlsJGvQQc.send';
-            fetch(notifyUrl, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'title='+encodeURIComponent('New message from '+name)+'&desp='+encodeURIComponent(name+' ('+email+')\n\n'+content)});
-        } catch(e) {}
-    };
+function sendChat() {
+    var name = document.getElementById('chat-name').value.trim() || 'Customer';
+    var email = document.getElementById('chat-email').value.trim() || 'customer@email.com';
+    var content = document.getElementById('chat-input').value.trim();
+    if (!content) return;
+    document.getElementById('chat-input').value = '';
 
-    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    fetch('/api/messages', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({sender_name: name, sender_email: email, content: content, session_id: CHAT_SESSION})
+    })
+    .then(function() { loadChat(); })
+    .catch(function(){});
 
-    setInterval(function(){ if (document.getElementById('chat-popup').style.display == 'block') loadChat(); }, 8000);
-})();
+    // Push to WeChat
+    try {
+        fetch('https://sctapi.ftqq.com/SCT356107TdAGEbh1QAfmdcjQxlsJGvQQc.send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'title=' + encodeURIComponent('New message from ' + name) + '&desp=' + encodeURIComponent(name + ' (' + email + ')\n\n' + content)
+        });
+    } catch(e) {}
+}
+
+setInterval(function() {
+    var p = document.getElementById('chat-popup');
+    if (p && (p.style.display === 'block')) loadChat();
+}, 8000);
 </script>
-
-<style>
-.cb-row { display: flex; margin: 8px 0; }
-.cb-left { justify-content: flex-start; }
-.cb-right { justify-content: flex-end; }
-.cb-avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; margin-right: 6px; }
-.cb-avatar-m { background: #2563eb; color: #fff; }
-.cb-bubble-wrap { max-width: 78%; }
-.cb-right-align { text-align: right; }
-.cb-name { font-size: 10px; color: #94a3b8; margin-bottom: 2px; }
-.cb-bubble { padding: 8px 12px; font-size: 12px; line-height: 1.4; word-break: break-word; display: inline-block; text-align: left; }
-.cb-gray { background: #e2e8f0; color: #334155; border-radius: 14px 14px 14px 2px; }
-.cb-blue { background: #2563eb; color: #fff; border-radius: 14px 14px 2px 14px; }
-.cb-time { font-size: 9px; color: #94a3b8; margin-top: 2px; }
-.cb-read { color: #34d399; font-size: 9px; }
-.cb-sent { color: #94a3b8; font-size: 9px; }
-</style>
 
 <div id="chat-widget" style="position:fixed;bottom:20px;right:20px;z-index:9999">
 <div id="chat-popup" style="display:none;width:360px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15);overflow:hidden;margin-bottom:12px">
 <div style="background:#2563eb;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center">
 <span style="font-weight:600;font-size:14px">Contact Merchant</span>
-<button onclick="toggleChat()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">&times;</button>
+<button onclick="toggleChat()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1">&times;</button>
 </div>
 <div id="chat-messages" style="height:300px;overflow-y:auto;padding:12px 16px;background:#f8fafc"></div>
 <div style="padding:10px;border-top:1px solid #e2e8f0;display:flex;gap:6px;background:#fff">
