@@ -85,9 +85,14 @@ async function loadChat(){
         let msgs=await r.json();
         d.innerHTML='';
         msgs.forEach(m=>{
-            let side=m.is_from_merchant?'':'justify-content-end';
-            let bg=m.is_from_merchant?'background:#f1f5f9;color:#333':'background:#2563eb;color:#fff';
-            d.innerHTML+='<div class="d-flex '+side+'" style="margin:4px 0"><div style="max-width:80%;padding:8px 12px;border-radius:12px;font-size:12px;'+bg+'">'+m.content.replace(/</g,'&lt;')+'<div style="font-size:9px;opacity:0.6;margin-top:2px">'+m.created_at+'</div></div></div>';
+            if(m.is_from_merchant){
+                // Merchant on LEFT
+                d.innerHTML+='<div style="display:flex;align-items:flex-start;gap:6px;margin:6px 0"><div style="width:26px;height:26px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">M</div><div style="max-width:78%"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px">Merchant</div><div style="padding:8px 12px;border-radius:14px 14px 14px 2px;background:#e2e8f0;color:#334155;font-size:12px;line-height:1.4;word-break:break-word">'+m.content.replace(/</g,'&lt;')+'</div><div style="font-size:9px;color:#94a3b8;margin-top:2px">'+m.created_at+'</div></div></div>';
+            }else{
+                // Customer on RIGHT with read receipt
+                let readStatus = m.is_read ? '<span style="color:#34d399;font-size:9px">&#10003;&#10003; Read</span>' : '<span style="color:#94a3b8;font-size:9px">&#10003; Sent</span>';
+                d.innerHTML+='<div style="display:flex;justify-content:flex-end;margin:6px 0"><div style="max-width:78%;text-align:right"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px">'+m.sender_name+'</div><div style="padding:8px 12px;border-radius:14px 14px 2px 14px;background:#2563eb;color:#fff;font-size:12px;line-height:1.4;word-break:break-word">'+m.content.replace(/</g,'&lt;')+'</div><div style="font-size:9px;color:#94a3b8;margin-top:2px">'+m.created_at+' '+readStatus+'</div></div></div>';
+            }
         });
         d.scrollTop=d.scrollHeight;
     }catch(e){}

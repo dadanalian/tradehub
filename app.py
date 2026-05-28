@@ -514,13 +514,13 @@ def create_app():
     @app.route("/api/messages", methods=["POST"])
     def api_send_message():
         data = request.json
-        email = data.get("email", "anonymous")
+        email = data.get("sender_email") or data.get("email", "anonymous@email.com")
         content = data.get("content", "")
         if not content:
             return jsonify({"error": "empty"}), 400
         msg = Message(
             sender_email=email,
-            sender_name=data.get("name", "Customer"),
+            sender_name=data.get("sender_name") or data.get("name", "Customer"),
             content=content,
             is_from_merchant=False,
             is_read=False
@@ -556,16 +556,19 @@ def create_app():
         msgs = Message.query.order_by(Message.created_at.desc()).limit(50).all()
         msgs.reverse()
         return jsonify([{
+            "id": m.id,
             "content": m.content,
             "is_from_merchant": m.is_from_merchant,
+            "is_read": m.is_read,
             "created_at": m.created_at.strftime("%H:%M"),
-            "sender_name": m.sender_name
+            "sender_name": m.sender_name,
+            "sender_email": m.sender_email
         } for m in msgs])
 
     @app.route("/api/messages/all")
     def api_messages_all():
         msgs = Message.query.order_by(Message.created_at.asc()).limit(100).all()
-        return jsonify([{"content": m.content, "is_from_merchant": m.is_from_merchant, "created_at": m.created_at.strftime("%H:%M"), "sender_name": m.sender_name} for m in msgs])
+        return jsonify([{"id": m.id, "content": m.content, "is_from_merchant": m.is_from_merchant, "is_read": m.is_read, "created_at": m.created_at.strftime("%H:%M"), "sender_name": m.sender_name, "sender_email": m.sender_email} for m in msgs])
 
     @app.route("/api/messages/unread")
     @login_required
@@ -574,6 +577,17 @@ def create_app():
             return jsonify({"count": 0})
         count = Message.query.filter_by(is_read=False, is_from_merchant=False).count()
         return jsonify({"count": count})
+
+    @app.route("/api/messages/read", methods=["POST"])
+    def api_mark_read():
+        data = request.json or {}
+        email = data.get("email", "")
+        if email:
+            Message.query.filter_by(sender_email=email, is_read=False, is_from_merchant=False).update({"is_read": True})
+        else:
+            Message.query.filter_by(is_read=False, is_from_merchant=False).update({"is_read": True})
+        db.session.commit()
+        return jsonify({"success": True})
 
     # ===== Merchant Settings =====
     @app.route("/merchant/settings", methods=["GET", "POST"])
