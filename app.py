@@ -532,9 +532,11 @@ def create_app():
         data = request.json
         email = data.get("sender_email") or data.get("email", "anonymous@email.com")
         content = data.get("content", "")
+        session_id = data.get("session_id", email)
         if not content:
             return jsonify({"error": "empty"}), 400
         msg = Message(
+            session_id=session_id,
             sender_email=email,
             sender_name=data.get("sender_name") or data.get("name", "Customer"),
             content=content,
