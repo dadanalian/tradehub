@@ -101,6 +101,9 @@ async function sendChat(){
     try{
         await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,content:content})});
         loadChat();
+        // Push to WeChat directly from browser
+        let notifyUrl='https://sctapi.ftqq.com/SCT356107TdAGEbh1QAfmdcjQxlsJGvQQc.send';
+        fetch(notifyUrl,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'title='+encodeURIComponent('New message from '+name)+'&desp='+encodeURIComponent(name+' ('+email+')\n\n'+content)});
     }catch(e){}
 }
 setInterval(function(){if(document.getElementById('chat-popup').style.display=='block')loadChat()},8000);
@@ -123,5 +126,33 @@ setInterval(function(){if(document.getElementById('chat-popup').style.display=='
 </div>
 </div>
 <button onclick="toggleChat()" style="width:52px;height:52px;background:var(--blue);color:#fff;border:none;border-radius:50%;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,.3);display:flex;align-items:center;justify-content:center">💬</button>
-</div></body>
+</div>
+<script>
+// Browser notification for merchant pages
+if(window.location.pathname.startsWith('/merchant')){
+    if(Notification.permission !== 'granted' && Notification.permission !== 'denied'){
+        Notification.requestPermission();
+    }
+    let lastMsgCount = 0;
+    setInterval(async function(){
+        try{
+            let r = await fetch('/api/messages/unread');
+            let d = await r.json();
+            if(d.count > lastMsgCount && lastMsgCount > 0 && Notification.permission === 'granted'){
+                new Notification('New Customer Message', {
+                    body: 'You have ' + d.count + ' new message(s). Click to view.',
+                    icon: 'https://shijingyuan.pythonanywhere.com/static/favicon.ico'
+                });
+            }
+            lastMsgCount = d.count;
+            let badge = document.getElementById('unread-badge');
+            if(badge){
+                badge.textContent = d.count;
+                badge.style.display = d.count > 0 ? 'inline' : 'none';
+            }
+        }catch(e){}
+    }, 10000);
+}
+</script>
+</body>
 </html>
