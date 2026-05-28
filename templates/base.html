@@ -8,36 +8,45 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+
 <div class="top-bar"><div class="container">
 <span>📞 +86-400-888-9999 | ✉️ support@tradehub.com</span>
-<div class="lang-flags">{% for code,name in languages.items() %}<a href="{{ url_for('set_lang', lang=code) }}" class="{{ 'active' if lang==code }}">{{ code.upper() }}</a>{% endfor %}</div>
+<div class="lang-flags">
+{% for code, name in languages.items() %}
+<a href="{{ url_for('set_lang', lang=code) }}" class="{{ 'active' if lang == code }}">{{ code.upper() }}</a>
+{% endfor %}
+</div>
 </div></div>
 
 <header class="site-header"><div class="container"><div class="header-main">
-<div class="logo"><a href="{{ url_for('index') }}"><span>&#x1f310;</span> {{ t("site_name") }}</a></div>
+<div class="logo"><a href="{{ url_for('index') }}">🌐 {{ t("site_name") }}</a></div>
 <form class="search-box" action="{{ url_for('products') }}" method="get">
-<input type="search" name="search" placeholder="{{ t('search') }}"><button type="submit">🔍</button>
+<input type="search" name="search" placeholder="{{ t('search') }}">
+<button type="submit">🔍</button>
 </form>
 <div class="header-actions">
-<a href="{{ url_for('chat') }}">🤖 Contact</a>
+<a href="{{ url_for('chat') }}">💬 Contact</a>
 <a href="{{ url_for('cart') }}">🛒 {{ t("cart") }} <span class="cart-count" id="cart-count">0</span></a>
 {% if current_user.is_authenticated %}
-<a href="{{ url_for('orders') }}">{{ t("my_orders") }}</a>
-<a href="{{ url_for('logout') }}">{{ t("logout") }}</a>
+<a href="{{ url_for('orders') }}">📋 {{ t("my_orders") }}</a>
+<a href="{{ url_for('logout') }}">🚪 {{ t("logout") }}</a>
 {% else %}
-<a href="{{ url_for('login') }}">{{ t("login") }}</a>
+<a href="{{ url_for('login') }}">👤 {{ t("login") }}</a>
 {% endif %}
 </div>
 </div></div></header>
 
 <nav class="main-nav"><div class="container">
 <div class="cat-menu"><div class="cat-btn">☰ {{ t("categories") }}</div>
-<div class="cat-dropdown">{% for cat in get_categories() %}<a href="{{ url_for('products', category=cat.slug) }}">{{ cat.name_en }}</a>{% endfor %}</div>
-</div>
+<div class="cat-dropdown">
+{% for cat in get_categories() %}
+<a href="{{ url_for('products', category=cat.slug) }}">{{ cat.name_en }}</a>
+{% endfor %}
+</div></div>
 <div class="nav-links">
 <a href="{{ url_for('index') }}" class="active">{{ t("home") }}</a>
 <a href="{{ url_for('products') }}">{{ t("products") }}</a>
-<a href="{{ url_for('chat') }}">Contact</a>
+<a href="{{ url_for('chat') }}">💬 Contact</a>
 </div>
 </div></nav>
 
@@ -55,8 +64,10 @@
 <div><h4>{{ t("quick_links") }}</h4><a href="{{ url_for('products') }}">{{ t("products") }}</a><br><a href="{{ url_for('chat') }}">Contact</a></div>
 <div><h4>{{ t("contact") }}</h4><p>✉️ support@tradehub.com<br>📞 +86-400-888-9999<br>📍 Shenzhen, China</p></div>
 <div><h4>{{ t("payment_methods") }}</h4><p>Visa · Mastercard · PayPal<br>T/T · Western Union</p></div>
-</div><div class="copy">&copy; 2026 TradeHub</div>
+</div>
+<div class="copy">&copy; 2026 TradeHub</div>
 </div></footer>
+
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% block extra_scripts %}{% endblock %}
 </body>

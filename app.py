@@ -120,30 +120,53 @@ def create_app():
                               .filter(Product.id != product.id).limit(4).all()
         return render_template("products/detail.html", product=product, related=related)
 
+    def get_guest_cart():
+        cart = session.get("guest_cart", {})
+        items = []
+        total = 0.0
+        for pid, qty in cart.items():
+            p = Product.query.get(int(pid))
+            if p:
+                items.append({"product": p, "quantity": qty, "id": pid})
+                total += p.price * qty
+        return items, total
+
     @app.route("/cart")
     def cart():
         if current_user.is_authenticated:
             items = CartItem.query.filter_by(user_id=current_user.id).all()
+            total = sum(item.product.price * item.quantity for item in items)
         else:
+            raw_items, total = get_guest_cart()
             items = []
-        total = sum(item.product.price * item.quantity for item in items) if items else 0
+            for ri in raw_items:
+                class GI: pass
+                gi = GI()
+                gi.product = ri["product"]
+                gi.quantity = ri["quantity"]
+                gi.id = ri["id"]
+                items.append(gi)
         return render_template("cart/cart.html", items=items, total=total)
 
     @app.route("/cart/add/<int:product_id>", methods=["POST"])
-    @login_required
     def cart_add(product_id):
         quantity = request.form.get("quantity", 1, type=int)
-        existing = CartItem.query.filter_by(user_id=current_user.id, product_id=product_id).first()
-        if existing:
-            existing.quantity += quantity
+        if current_user.is_authenticated:
+            existing = CartItem.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+            if existing:
+                existing.quantity += quantity
+            else:
+                db.session.add(CartItem(user_id=current_user.id, product_id=product_id, quantity=quantity))
+            db.session.commit()
         else:
-            db.session.add(CartItem(user_id=current_user.id, product_id=product_id, quantity=quantity))
-        db.session.commit()
+            cart = session.get("guest_cart", {})
+            pid_str = str(product_id)
+            cart[pid_str] = cart.get(pid_str, 0) + quantity
+            session["guest_cart"] = cart
         flash("Added to cart", "success")
         return redirect(url_for("cart"))
 
     @app.route("/cart/update/<int:item_id>", methods=["POST"])
-    @login_required
     def cart_update(item_id):
         item = CartItem.query.get_or_404(item_id)
         if item.user_id != current_user.id:
@@ -154,7 +177,6 @@ def create_app():
         return jsonify({"success": True, "subtotal": f"{item.product.price * item.quantity:.2f}", "total": f"{total:.2f}"})
 
     @app.route("/cart/remove/<int:item_id>", methods=["POST"])
-    @login_required
     def cart_remove(item_id):
         item = CartItem.query.get_or_404(item_id)
         if item.user_id != current_user.id:
@@ -166,11 +188,23 @@ def create_app():
     # GUEST CHECKOUT - no login required
     @app.route("/checkout", methods=["GET", "POST"])
     def checkout():
+        order_items = []
         if current_user.is_authenticated:
             items = CartItem.query.filter_by(user_id=current_user.id).all()
+            total = sum(item.product.price * item.quantity for item in items)
+            for item in items:
+                order_items.append((item.product, item.quantity, item.product.price))
         else:
+            raw_items, total = get_guest_cart()
             items = []
-        total = sum(item.product.price * item.quantity for item in items) if items else 0
+            for ri in raw_items:
+                class GI: pass
+                gi = GI()
+                gi.product = ri["product"]
+                gi.quantity = ri["quantity"]
+                gi.id = ri["id"]
+                items.append(gi)
+                order_items.append((ri["product"], ri["quantity"], ri["product"].price))
 
         if request.method == "POST":
             order = Order(
@@ -184,11 +218,12 @@ def create_app():
                 status="pending"
             )
             db.session.add(order)
-            for item in items:
-                db.session.add(OrderItem(order=order, product_id=item.product_id,
-                                         quantity=item.quantity, price=item.product.price))
+            for prod, qty, price in order_items:
+                db.session.add(OrderItem(order=order, product_id=prod.id, quantity=qty, price=price))
             if current_user.is_authenticated:
                 CartItem.query.filter_by(user_id=current_user.id).delete()
+            else:
+                session.pop("guest_cart", None)
             db.session.commit()
             flash("Order submitted successfully! We will contact you soon.", "success")
             return redirect(url_for("payment_info", order_id=order.id))
