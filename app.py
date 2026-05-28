@@ -226,6 +226,7 @@ def create_app():
                 session.pop("guest_cart", None)
             db.session.commit()
             flash("Order submitted successfully! We will contact you soon.", "success")
+            push_wx(f"New Order #{order.id}", f"Customer: {order.contact_name}\nEmail: {order.contact_email}\nAmount: ${order.total_amount:.2f}\n\nView: https://shijingyuan.pythonanywhere.com/merchant/orders")
             notify_merchant("new_order", f"New Order #{order.id}", f"Customer: {order.contact_name}\nEmail: {order.contact_email}\nAmount: ${order.total_amount:.2f}\nAddress: {order.shipping_address}")
             return redirect(url_for("payment_info", order_id=order.id))
         return render_template("orders/checkout.html", items=items, total=total)
@@ -260,6 +261,7 @@ def create_app():
         ))
         db.session.commit()
         flash("Inquiry sent! We will reply soon.", "success")
+        push_wx(f"New Inquiry", f"From: {inquiry.name}\nEmail: {inquiry.email}\n\n{inquiry.message[:200]}\n\nView: https://shijingyuan.pythonanywhere.com/merchant/messages")
         notify_merchant("new_inquiry", f"New Inquiry about #{product_id}", f"From: {inquiry.name}\nEmail: {inquiry.email}\n\n{inquiry.message[:200]}")
         return redirect(url_for("product_detail", product_id=product_id))
 
@@ -393,6 +395,18 @@ def create_app():
             except:
                 pass
 
+
+    def push_wx(title, content):
+        """Send push notification to WeChat via Server酱"""
+        import urllib.request, urllib.parse
+        try:
+            data = urllib.parse.urlencode({"title": title, "desp": content}).encode()
+            req = urllib.request.Request("https://sctapi.ftqq.com/SCT356107TdAGEbh1QAfmdcjQxlsJGvQQc.send", data=data, method="POST")
+            urllib.request.urlopen(req, timeout=10)
+            return True
+        except:
+            return False
+
     def send_email(to_email, subject, body):
         """Send email via QQ SMTP"""
         import smtplib
@@ -516,6 +530,7 @@ def create_app():
                 send_email(settings.notify_email, f"New message from {msg.sender_name}", f"From: {msg.sender_name} ({msg.sender_email})\n\n{msg.content}\n\nReply at: https://shijingyuan.pythonanywhere.com/merchant/messages")
         except:
             pass
+        push_wx(f"New message from {msg.sender_name}", f"{msg.sender_name} ({msg.sender_email})\n\n{msg.content[:300]}\n\nReply: https://shijingyuan.pythonanywhere.com/merchant/messages")
         notify_merchant("new_message", f"New message from {msg.sender_name}",
                         f"From: {msg.sender_name} ({msg.sender_email})\n\n{msg.content[:200]}")
         return jsonify({"success": True})
