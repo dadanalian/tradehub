@@ -608,12 +608,6 @@ def create_app():
             auto_seed()
         except:
             pass
-        # Ensure Message table matches model
-        try:
-            db.session.execute(db.text("DROP TABLE IF EXISTS messages"))
-            db.create_all()
-        except:
-            pass
             admin = User.query.filter_by(username="admin").first()
             if admin:
                 admin.email = "1966899806@qq.com"
@@ -634,12 +628,6 @@ def create_app():
         try:
             db.create_all()
             auto_seed()
-        except:
-            pass
-        # Ensure Message table matches model
-        try:
-            db.session.execute(db.text("DROP TABLE IF EXISTS messages"))
-            db.create_all()
         except:
             pass
         except:
