@@ -1,35 +1,29 @@
 {% extends "base.html" %}
 {% block title %}{{ '结算' if lang == 'zh' else 'Checkout' }}{% endblock %}
 {% block content %}
-<div class="container py-4">
-    <h2 class="fw-bold mb-4">{{ '结算' if lang == 'zh' else 'Checkout' }}</h2>
-    <div class="row g-4">
-        <div class="col-md-8">
-            <div class="card shadow-sm"><div class="card-body p-4">
-                <h5 class="fw-bold mb-3">{{ '收货信息' if lang == 'zh' else 'Shipping Information' }}</h5>
-                <form method="POST">
-                    <div class="row g-3">
-                        <div class="col-md-6"><label class="form-label">{{ '联系人' if lang == 'zh' else 'Contact Name' }}</label><input type="text" name="contact_name" class="form-control" value="{{ current_user.username }}" required></div>
-                        <div class="col-md-6"><label class="form-label">{{ '邮箱' if lang == 'zh' else 'Email' }}</label><input type="email" name="contact_email" class="form-control" value="{{ current_user.email }}" required></div>
-                        <div class="col-md-6"><label class="form-label">{{ '电话' if lang == 'zh' else 'Phone' }}</label><input type="text" name="contact_phone" class="form-control" value="{{ current_user.phone or '' }}"></div>
-                        <div class="col-12"><label class="form-label">{{ '收货地址' if lang == 'zh' else 'Shipping Address' }}</label><textarea name="shipping_address" class="form-control" rows="3" required placeholder="{{ '请填写详细地址...' if lang == 'zh' else 'Enter full shipping address...' }}"></textarea></div>
-                        <div class="col-12"><label class="form-label">{{ '备注' if lang == 'zh' else 'Notes' }}</label><textarea name="notes" class="form-control" rows="2" placeholder="{{ '选填' if lang == 'zh' else 'Optional' }}"></textarea></div>
-                    </div>
-                    <hr>
-                    <button type="submit" class="btn btn-success btn-lg w-100"><i class="bi bi-check-circle"></i> {{ '提交订单' if lang == 'zh' else 'Place Order' }}</button>
-                </form>
-            </div></div>
+<div class="container">
+    <h2 style="font-size:22px;font-weight:700;margin:20px 0">{% if lang == 'zh' %}确认订单{% else %}Checkout{% endif %}</h2>
+    <div style="display:flex;gap:20px">
+        <div style="flex:1;background:#fff;border-radius:4px;padding:25px">
+            <h3 style="font-size:16px;font-weight:700;margin-bottom:15px">{% if lang == 'zh' %}收货信息{% else %}Shipping Info{% endif %}</h3>
+            <form method="POST">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="form-group"><label>{% if lang == 'zh' %}联系人{% else %}Name{% endif %}</label><input name="contact_name" value="{{ current_user.username }}" required></div>
+                    <div class="form-group"><label>Email</label><input type="email" name="contact_email" value="{{ current_user.email }}" required></div>
+                    <div class="form-group"><label>{% if lang == 'zh' %}电话{% else %}Phone{% endif %}</label><input name="contact_phone" value="{{ current_user.phone or '' }}"></div>
+                    <div class="form-group" style="grid-column:span 2"><label>{% if lang == 'zh' %}收货地址{% else %}Address{% endif %}</label><textarea name="shipping_address" rows="3" required></textarea></div>
+                    <div class="form-group" style="grid-column:span 2"><label>{% if lang == 'zh' %}备注{% else %}Notes{% endif %}</label><textarea name="notes" rows="2"></textarea></div>
+                </div>
+                <button type="submit" class="submit-btn" style="margin-top:20px">{% if lang == 'zh' %}提交订单{% else %}Place Order{% endif %}</button>
+            </form>
         </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm"><div class="card-body">
-                <h5 class="fw-bold mb-3">{{ '订单摘要' if lang == 'zh' else 'Order Summary' }}</h5>
-                {% for item in items %}
-                <div class="d-flex justify-content-between mb-2"><span>{{ item.product.name_zh if lang == 'zh' else item.product.name_en }} x {{ item.quantity }}</span><span>${{ "%.2f"|format(item.product.price * item.quantity) }}</span></div>
-                {% endfor %}
-                <hr>
-                <div class="d-flex justify-content-between fw-bold fs-5"><span>{{ '合计' if lang == 'zh' else 'Total' }}</span><span class="text-primary">${{ "%.2f"|format(total) }}</span></div>
-                <small class="text-muted">{{ '支付方式: T/T, L/C, PayPal 等' if lang == 'zh' else 'Payment: T/T, L/C, PayPal, etc.' }}</small>
-            </div></div>
+        <div style="width:350px;background:#fff;border-radius:4px;padding:20px;align-self:flex-start">
+            <h3 style="font-size:16px;font-weight:700;margin-bottom:15px">{% if lang == 'zh' %}订单摘要{% else %}Summary{% endif %}</h3>
+            {% for item in items %}
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px"><span>{{ item.product.name_zh if lang == 'zh' else item.product.name_en }} x{{ item.quantity }}</span><span>${{ "%.2f"|format(item.product.price*item.quantity) }}</span></div>
+            {% endfor %}
+            <hr style="border-color:var(--jd-border)">
+            <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:700"><span>{% if lang == 'zh' %}合计{% else %}Total{% endif %}</span><span class="text-red">${{ "%.2f"|format(total) }}</span></div>
         </div>
     </div>
 </div>

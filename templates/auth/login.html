@@ -1,32 +1,12 @@
 {% extends "base.html" %}
-{% block title %}{{ '登录' if lang == 'zh' else 'Login' }}{% endblock %}
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow">
-                <div class="card-body p-5">
-                    <h3 class="text-center mb-4">{{ '登录账户' if lang == 'zh' else 'Sign In' }}</h3>
-                    <form method="POST">
-                        <div class="mb-3">
-                            <label class="form-label">{{ '邮箱' if lang == 'zh' else 'Email' }}</label>
-                            <input type="email" name="email" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">{{ '密码' if lang == 'zh' else 'Password' }}</label>
-                            <input type="password" name="password" class="form-control" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 btn-lg">
-                            {{ '登录' if lang == 'zh' else 'Login' }}
-                        </button>
-                    </form>
-                    <p class="text-center mt-3">
-                        {{ '没有账户？' if lang == 'zh' else 'No account?' }}
-                        <a href="{{ url_for("register") }}">{{ '注册' if lang == 'zh' else 'Register' }}</a>
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="auth-card">
+    <h2>{% if lang == 'zh' %}登录 TradeHub{% else %}Sign In{% endif %}</h2>
+    <form method="POST">
+        <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
+        <div class="form-group"><label>{% if lang == 'zh' %}密码{% else %}Password{% endif %}</label><input type="password" name="password" required></div>
+        <button type="submit" class="submit-btn">{% if lang == 'zh' %}登录{% else %}Sign In{% endif %}</button>
+    </form>
+    <div class="switch-link">{% if lang == 'zh' %}没有账户？{% else %}No account?{% endif %} <a href="{{ url_for('register') }}">{% if lang == 'zh' %}免费注册{% else %}Sign Up{% endif %}</a></div>
 </div>
 {% endblock %}

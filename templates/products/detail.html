@@ -1,58 +1,68 @@
 {% extends "base.html" %}
 {% block title %}{{ product.name_zh if lang == 'zh' else product.name_en }}{% endblock %}
 {% block content %}
-<div class="container py-4">
-    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ url_for("index") }}">{{ '首页' if lang == 'zh' else 'Home' }}</a></li><li class="breadcrumb-item"><a href="{{ url_for("products") }}">{{ '产品' if lang == 'zh' else 'Products' }}</a></li><li class="breadcrumb-item active">{{ product.name_zh if lang == 'zh' else product.name_en }}</li></ol></nav>
-    <div class="row g-5">
-        <div class="col-md-6">
-            <img src="{{ product.image_url or 'https://placehold.co/600x600/e2e8f0/64748b?text=Product' }}" class="img-fluid rounded-3 shadow" alt="{{ product.name_en }}">
-        </div>
-        <div class="col-md-6">
-            <h2 class="fw-bold">{{ product.name_zh if lang == 'zh' else product.name_en }}</h2>
-            <p class="text-muted">{{ '分类' if lang == 'zh' else 'Category' }}: {{ product.category.name_zh if lang == 'zh' else product.category.name_en }}</p>
-            <h3 class="text-primary fw-bold my-3">${{ "%.2f"|format(product.price) }} <small class="text-muted fs-6">{{ product.currency }}</small></h3>
-            {% if product.moq and product.moq > 1 %}<p><span class="badge bg-warning text-dark">MOQ: {{ product.moq }} {{ '件' if lang == 'zh' else 'pcs' }}</span></p>{% endif %}
-            {% if product.stock > 0 %}<p class="text-success">{{ '库存: ' if lang == 'zh' else 'Stock: ' }}{{ product.stock }}</p>{% else %}<p class="text-danger">{{ '缺货' if lang == 'zh' else 'Out of stock' }}</p>{% endif %}
-            <hr>
-            <h5>{{ '产品描述' if lang == 'zh' else 'Description' }}</h5>
-            <p class="text-secondary">{{ (product.description_zh if lang == 'zh' else product.description_en) or ('暂无描述' if lang == 'zh' else 'No description') }}</p>
-            <hr>
+<div class="container">
+    <div class="breadcrumb"><a href="/">{% if lang == 'zh' %}首页{% else %}Home{% endif %}</a> &gt; <a href="{{ url_for('products') }}">{% if lang == 'zh' %}产品{% else %}Products{% endif %}</a> &gt; {{ product.name_zh if lang == 'zh' else product.name_en }}</div>
+    <div class="detail-layout">
+        <div class="detail-gallery"><div class="main-img"><img src="{{ product.image_url or 'https://placehold.co/600x600/f5f5f5/ccc?text=Product' }}" alt="{{ product.name_en }}"></div></div>
+        <div class="detail-info">
+            <h1>{{ product.name_zh if lang == 'zh' else product.name_en }}</h1>
+            <p style="color:var(--jd-gray);font-size:13px">{{ product.category.name_zh if lang == 'zh' else product.category.name_en }}</p>
+            <div class="detail-price"><span class="label">{% if lang == 'zh' %}价格{% else %}Price{% endif %}</span><br><span class="amount"><small>$</small>{{ "%.2f"|format(product.price) }}</span></div>
+            <div class="detail-meta">
+                <span>{% if lang == 'zh' %}库存{% else %}Stock{% endif %}: <b style="color:{{ '#52c41a' if product.stock > 0 else 'var(--jd-red)' }}">{{ product.stock if product.stock > 0 else ('缺货' if lang=='zh' else 'OOS') }}</b></span>
+                <span>MOQ: <b>{{ product.moq }}</b></span>
+                <span>{% if lang == 'zh' %}货币{% else %}Currency{% endif %}: <b>{{ product.currency }}</b></span>
+            </div>
+            <hr style="border-color:var(--jd-border)">
+            <h4 style="font-size:15px;margin-bottom:8px">{% if lang == 'zh' %}产品描述{% else %}Description{% endif %}</h4>
+            <p style="color:#666;font-size:13px;line-height:1.8">{{ (product.description_zh if lang == 'zh' else product.description_en) or ('暂无描述' if lang=='zh' else 'No description') }}</p>
             {% if current_user.is_authenticated %}
-            <form action="{{ url_for("cart_add", product_id=product.id) }}" method="POST" class="d-flex gap-2 align-items-center">
-                <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="form-control w-auto" style="width:80px">
-                <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-cart-plus"></i> {{ '加入购物车' if lang == 'zh' else 'Add to Cart' }}</button>
+            <form action="{{ url_for('cart_add', product_id=product.id) }}" method="POST" style="margin-top:20px">
+                <div class="qty-input">
+                    <button type="button" onclick="this.nextElementSibling.stepDown()">-</button>
+                    <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" readonly>
+                    <button type="button" onclick="this.previousElementSibling.stepUp()">+</button>
+                </div>
+                <div class="detail-actions">
+                    <button type="submit" class="btn-lg-red">{% if lang == 'zh' %}加入购物车{% else %}Add to Cart{% endif %}</button>
+                    <a href="{{ url_for('chat') }}" class="btn-lg-outline">{% if lang == 'zh' %}咨询客服{% else %}Ask Support{% endif %}</a>
+                </div>
             </form>
             {% else %}
-            <a href="{{ url_for("login") }}" class="btn btn-primary btn-lg">{{ '登录后购买' if lang == 'zh' else 'Login to Buy' }}</a>
+            <a href="{{ url_for('login') }}" class="btn-lg-red" style="display:inline-block;margin-top:15px">{% if lang == 'zh' %}登录后购买{% else %}Login to Buy{% endif %}</a>
             {% endif %}
         </div>
     </div>
-    <!-- Inquiry Form -->
-    <div class="row mt-5"><div class="col-md-8 mx-auto"><div class="card shadow-sm"><div class="card-body p-4">
-        <h4 class="fw-bold mb-3">{{ '发送询盘' if lang == 'zh' else 'Send Inquiry' }}</h4>
-        <form action="{{ url_for("inquiry", product_id=product.id) }}" method="POST">
-            <div class="row g-3">
-                <div class="col-md-6"><input type="text" name="name" class="form-control" placeholder="{{ '您的姓名' if lang == 'zh' else 'Your Name' }}" required></div>
-                <div class="col-md-6"><input type="email" name="email" class="form-control" placeholder="{{ '您的邮箱' if lang == 'zh' else 'Your Email' }}" required></div>
-                <div class="col-md-6"><input type="text" name="company" class="form-control" placeholder="{{ '公司名称' if lang == 'zh' else 'Company' }}"></div>
-                <div class="col-md-6"><input type="text" name="phone" class="form-control" placeholder="{{ '电话' if lang == 'zh' else 'Phone' }}"></div>
-                <div class="col-12"><textarea name="message" class="form-control" rows="4" placeholder="{{ '请输入您的询盘内容...' if lang == 'zh' else 'Enter your inquiry...' }}" required></textarea></div>
-                <div class="col-12"><button type="submit" class="btn btn-success"><i class="bi bi-send"></i> {{ '发送询盘' if lang == 'zh' else 'Send Inquiry' }}</button></div>
+    <!-- Inquiry -->
+    <div style="background:#fff;border-radius:4px;padding:25px;margin-top:20px">
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:15px">{% if lang == 'zh' %}发送询盘{% else %}Send Inquiry{% endif %}</h3>
+        <form action="{{ url_for('inquiry', product_id=product.id) }}" method="POST">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <input name="name" class="form-control" placeholder="{% if lang == 'zh' %}姓名{% else %}Name{% endif %}" required style="padding:10px;border:1px solid var(--jd-border);border-radius:4px">
+                <input name="email" type="email" class="form-control" placeholder="{% if lang == 'zh' %}邮箱{% else %}Email{% endif %}" required style="padding:10px;border:1px solid var(--jd-border);border-radius:4px">
+                <input name="company" class="form-control" placeholder="{% if lang == 'zh' %}公司{% else %}Company{% endif %}" style="padding:10px;border:1px solid var(--jd-border);border-radius:4px">
+                <input name="phone" class="form-control" placeholder="{% if lang == 'zh' %}电话{% else %}Phone{% endif %}" style="padding:10px;border:1px solid var(--jd-border);border-radius:4px">
+                <textarea name="message" rows="3" placeholder="{% if lang == 'zh' %}询盘内容...{% else %}Your message...{% endif %}" required style="grid-column:span 2;padding:10px;border:1px solid var(--jd-border);border-radius:4px"></textarea>
+                <button type="submit" class="btn-lg-red" style="grid-column:span 2">{% if lang == 'zh' %}发送询盘{% else %}Send Inquiry{% endif %}</button>
             </div>
         </form>
-    </div></div></div></div>
-    <!-- Related Products -->
+    </div>
     {% if related %}
-    <section class="mt-5"><h4 class="fw-bold mb-3">{{ '相关产品' if lang == 'zh' else 'Related Products' }}</h4><div class="row g-3">
+    <div class="section-header"><h2>{% if lang == 'zh' %}相关产品{% else %}Related{% endif %}</h2></div>
+    <div class="product-grid">
         {% for rp in related %}
-        <div class="col-md-3"><div class="card product-card h-100 shadow-sm">
-            <div class="product-img-wrapper"><img src="{{ rp.image_url or 'https://placehold.co/400x400/e2e8f0/64748b?text=Product' }}" class="card-img-top" alt="{{ rp.name_en }}"></div>
-            <div class="card-body"><h6 class="card-title">{{ rp.name_zh if lang == 'zh' else rp.name_en }}</h6>
-                <div class="d-flex justify-content-between align-items-center"><span class="fw-bold text-primary">${{ "%.2f"|format(rp.price) }}</span><a href="{{ url_for("product_detail", product_id=rp.id) }}" class="btn btn-sm btn-outline-primary">{{ '查看' if lang == 'zh' else 'View' }}</a></div>
-            </div>
-        </div></div>
+        <a href="{{ url_for('product_detail', product_id=rp.id) }}" class="product-card">
+            <div class="img-wrap"><img src="{{ rp.image_url or 'https://placehold.co/400x400/f5f5f5/ccc?text=Product' }}" alt=""></div>
+            <div class="info"><div class="name">{{ rp.name_zh if lang == 'zh' else rp.name_en }}</div><div class="price-row"><span class="price-symbol">$</span><span class="price">{{ "%.2f"|format(rp.price) }}</span></div></div>
+        </a>
         {% endfor %}
-    </div></section>
+    </div>
     {% endif %}
 </div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.qty-input button').forEach(b=>{b.addEventListener('click',function(){this.parentElement.querySelector('input').dispatchEvent(new Event('change'))})})
+</script>
 {% endblock %}

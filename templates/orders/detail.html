@@ -1,36 +1,27 @@
 {% extends "base.html" %}
-{% block title %}{{ '订单详情' if lang == 'zh' else 'Order Detail' }} #{{ order.id }}{% endblock %}
+{% block title %}#{{ order.id }}{% endblock %}
 {% block content %}
-<div class="container py-4">
-    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ url_for("orders") }}">{{ '我的订单' if lang == 'zh' else 'My Orders' }}</a></li><li class="breadcrumb-item active">#{{ order.id }}</li></ol></nav>
-    <div class="row g-4">
-        <div class="col-md-8">
-            <div class="card shadow-sm mb-3"><div class="card-body">
-                <h5 class="fw-bold">{{ '订单商品' if lang == 'zh' else 'Order Items' }}</h5>
-                {% for item in order.items %}
-                <div class="d-flex align-items-center gap-3 py-2 border-bottom">
-                    <img src="{{ item.product.image_url or 'https://placehold.co/60x60/e2e8f0/64748b?text=P' }}" width="50" class="rounded" alt="">
-                    <div class="flex-grow-1"><strong>{{ item.product.name_zh if lang == 'zh' else item.product.name_en }}</strong><br><small class="text-muted">Qty: {{ item.quantity }} x ${{ "%.2f"|format(item.price) }}</small></div>
-                    <strong>${{ "%.2f"|format(item.price * item.quantity) }}</strong>
-                </div>
-                {% endfor %}
-                <div class="d-flex justify-content-between mt-3 fw-bold fs-5"><span>{{ '合计' if lang == 'zh' else 'Total' }}</span><span class="text-primary">${{ "%.2f"|format(order.total_amount) }}</span></div>
-            </div></div>
+<div class="container">
+    <div class="breadcrumb"><a href="{{ url_for('orders') }}">{% if lang == 'zh' %}我的订单{% else %}My Orders{% endif %}</a> &gt; #{{ order.id }}</div>
+    <div style="display:flex;gap:20px">
+        <div style="flex:1;background:#fff;border-radius:4px;padding:25px">
+            <h3 style="font-size:16px;font-weight:700;margin-bottom:15px">{% if lang == 'zh' %}订单商品{% else %}Items{% endif %}</h3>
+            {% for item in order.items %}
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--jd-border)">
+                <img src="{{ item.product.image_url or 'https://placehold.co/60/f5f5f5/ccc' }}" width="60" style="border:1px solid var(--jd-border);border-radius:4px">
+                <div style="flex:1"><b>{{ item.product.name_zh if lang=='zh' else item.product.name_en }}</b><br><small style="color:var(--jd-gray)">x{{ item.quantity }} &times; ${{ "%.2f"|format(item.price) }}</small></div>
+                <b class="text-red">${{ "%.2f"|format(item.price*item.quantity) }}</b>
+            </div>
+            {% endfor %}
+            <div style="text-align:right;margin-top:15px;font-size:18px;font-weight:700">{% if lang == 'zh' %}合计{% else %}Total{% endif %}: <span class="text-red">${{ "%.2f"|format(order.total_amount) }}</span></div>
         </div>
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-3"><div class="card-body">
-                <h5 class="fw-bold">{{ '订单信息' if lang == 'zh' else 'Order Info' }}</h5>
-                <p><strong>{{ '状态' if lang == 'zh' else 'Status' }}:</strong> <span class="badge bg-{{ "success" if order.status == "delivered" else "warning" if order.status == "pending" else "info" }}">{{ order.status }}</span></p>
-                <p><strong>{{ '日期' if lang == 'zh' else 'Date' }}:</strong> {{ order.created_at.strftime("%Y-%m-%d %H:%M") }}</p>
-            </div></div>
-            <div class="card shadow-sm"><div class="card-body">
-                <h5 class="fw-bold">{{ '收货信息' if lang == 'zh' else 'Shipping Info' }}</h5>
-                <p><strong>{{ '联系人' if lang == 'zh' else 'Contact' }}:</strong> {{ order.contact_name }}</p>
-                <p><strong>Email:</strong> {{ order.contact_email }}</p>
-                {% if order.contact_phone %}<p><strong>{{ '电话' if lang == 'zh' else 'Phone' }}:</strong> {{ order.contact_phone }}</p>{% endif %}
-                <p><strong>{{ '地址' if lang == 'zh' else 'Address' }}:</strong> {{ order.shipping_address }}</p>
-                {% if order.notes %}<p><strong>{{ '备注' if lang == 'zh' else 'Notes' }}:</strong> {{ order.notes }}</p>{% endif %}
-            </div></div>
+        <div style="width:300px;background:#fff;border-radius:4px;padding:20px;align-self:flex-start">
+            <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">{% if lang == 'zh' %}订单信息{% else %}Info{% endif %}</h3>
+            <p style="font-size:13px;margin:6px 0"><b>{% if lang == 'zh' %}状态{% else %}Status{% endif %}:</b> <span class="status-badge status-{{ order.status }}">{{ order.status }}</span></p>
+            <p style="font-size:13px;margin:6px 0"><b>{% if lang == 'zh' %}日期{% else %}Date{% endif %}:</b> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            <p style="font-size:13px;margin:6px 0"><b>{% if lang == 'zh' %}联系人{% else %}Contact{% endif %}:</b> {{ order.contact_name }}</p>
+            <p style="font-size:13px;margin:6px 0"><b>Email:</b> {{ order.contact_email }}</p>
+            <p style="font-size:13px;margin:6px 0"><b>{% if lang == 'zh' %}地址{% else %}Address{% endif %}:</b> {{ order.shipping_address }}</p>
         </div>
     </div>
 </div>

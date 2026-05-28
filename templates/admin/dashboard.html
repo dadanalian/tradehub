@@ -1,28 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Admin{% endblock %}
 {% block content %}
-<div class="container py-4">
-    <h2 class="fw-bold mb-4">🛠️ Admin Dashboard</h2>
-    <div class="row g-3 mb-4">
-        <div class="col-md-3"><div class="card bg-primary text-white"><div class="card-body text-center"><h3>{{ stats.products }}</h3><small>Products</small></div></div></div>
-        <div class="col-md-3"><div class="card bg-success text-white"><div class="card-body text-center"><h3>{{ stats.orders }}</h3><small>Orders</small></div></div></div>
-        <div class="col-md-3"><div class="card bg-info text-white"><div class="card-body text-center"><h3>{{ stats.users }}</h3><small>Users</small></div></div></div>
-        <div class="col-md-3"><div class="card bg-warning text-dark"><div class="card-body text-center"><h3>{{ stats.inquiries }}</h3><small>New Inquiries</small></div></div></div>
-    </div>
-    <div class="row g-4">
-        <div class="col-md-6"><div class="card shadow-sm"><div class="card-header fw-bold">Recent Orders</div><div class="card-body">
-            {% for o in stats.recent_orders %}<div class="d-flex justify-content-between py-2 border-bottom"><span>#{{ o.id }} - {{ o.contact_name }}</span><span>${{ "%.2f"|format(o.total_amount) }}</span><span class="badge bg-{{ "success" if o.status=="delivered" else "warning" }}">{{ o.status }}</span></div>{% endfor %}
-            <a href="{{ url_for("admin_orders") }}" class="btn btn-sm btn-outline-primary mt-3">View All Orders</a>
-        </div></div></div>
-        <div class="col-md-6"><div class="card shadow-sm"><div class="card-header fw-bold">New Inquiries</div><div class="card-body">
-            {% for i in stats.recent_inquiries %}<div class="py-2 border-bottom"><strong>{{ i.name }}</strong> ({{ i.email }}){% if i.product %}<br><small>Re: {{ i.product.name_en }}</small>{% endif %}<br><small class="text-muted">{{ i.message[:100] }}...</small></div>{% endfor %}
-            <a href="{{ url_for("admin_inquiries") }}" class="btn btn-sm btn-outline-primary mt-3">View All Inquiries</a>
-        </div></div></div>
-    </div>
-    <div class="mt-4 d-flex gap-2">
-        <a href="{{ url_for("admin_products") }}" class="btn btn-outline-primary">Manage Products</a>
-        <a href="{{ url_for("admin_orders") }}" class="btn btn-outline-success">Manage Orders</a>
-        <a href="{{ url_for("admin_inquiries") }}" class="btn btn-outline-warning">View Inquiries</a>
+<div class="container">
+    <div class="admin-layout">
+        <div class="admin-sidebar">
+            <a href="{{ url_for('admin') }}" class="active">&#x1f4ca; Dashboard</a>
+            <a href="{{ url_for('admin_products') }}">&#x1f4e6; Products</a>
+            <a href="{{ url_for('admin_orders') }}">&#x1f4cb; Orders</a>
+            <a href="{{ url_for('admin_inquiries') }}">&#x1f4e9; Inquiries</a>
+        </div>
+        <div class="admin-main">
+            <h3 style="font-size:20px;font-weight:700;margin-bottom:20px">Dashboard</h3>
+            <div class="stat-cards">
+                <div class="stat-card red"><div class="num">{{ stats.products }}</div><div class="label">Products</div></div>
+                <div class="stat-card blue"><div class="num">{{ stats.orders }}</div><div class="label">Orders</div></div>
+                <div class="stat-card green"><div class="num">{{ stats.users }}</div><div class="label">Users</div></div>
+                <div class="stat-card orange"><div class="num">{{ stats.inquiries }}</div><div class="label">New Inquiries</div></div>
+            </div>
+            <div style="display:flex;gap:20px">
+                <div style="flex:1;background:#fff;border-radius:4px;padding:20px">
+                    <h4 style="font-size:14px;font-weight:700;margin-bottom:12px">Recent Orders</h4>
+                    {% for o in stats.recent_orders %}
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--jd-border);font-size:13px"><span>#{{ o.id }} {{ o.contact_name }}</span><span>${{ "%.2f"|format(o.total_amount) }}</span><span class="status-badge status-{{ o.status }}">{{ o.status }}</span></div>
+                    {% endfor %}
+                </div>
+                <div style="flex:1;background:#fff;border-radius:4px;padding:20px">
+                    <h4 style="font-size:14px;font-weight:700;margin-bottom:12px">New Inquiries</h4>
+                    {% for i in stats.recent_inquiries %}
+                    <div style="padding:8px 0;border-bottom:1px solid var(--jd-border);font-size:13px"><b>{{ i.name }}</b> ({{ i.email }})<br><span style="color:var(--jd-gray)">{{ i.message[:60] }}...</span></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,85 +1,39 @@
 {% extends "base.html" %}
-{% block title %}🦞 {{ '龙虾助手' if lang == 'zh' else 'LobsterBot AI' }}{% endblock %}
+{% block title %}&#x1f99e; {{ '龙虾助手' if lang == 'zh' else 'LobsterBot' }}{% endblock %}
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white d-flex align-items-center gap-2">
-                    <span class="fs-3">🦞</span>
-                    <div><h5 class="mb-0">{{ '龙虾助手 - AI 智能客服' if lang == 'zh' else 'LobsterBot - AI Assistant' }}</h5><small>{{ '随时为您解答外贸问题' if lang == 'zh' else 'Here to help with your trade questions' }}</small></div>
-                </div>
-                <div class="card-body" style="height: 450px; overflow-y: auto;" id="chat-messages">
-                    <div class="d-flex mb-3">
-                        <div class="bg-light rounded-3 p-3" style="max-width:80%">
-                            <p class="mb-0">{{ '您好！我是龙虾助手 🦞，您的智能外贸客服。我可以帮您：' if lang == 'zh' else 'Hello! I am LobsterBot 🦞, your AI trade assistant. I can help with:' }}</p>
-                            <ul class="mb-0 mt-2 small">
-                                <li>{{ '产品信息和推荐' if lang == 'zh' else 'Product info & recommendations' }}</li>
-                                <li>{{ '价格和起订量咨询' if lang == 'zh' else 'Pricing & MOQ inquiries' }}</li>
-                                <li>{{ '物流和运输方案' if lang == 'zh' else 'Shipping & logistics' }}</li>
-                                <li>{{ '支付方式说明' if lang == 'zh' else 'Payment methods' }}</li>
-                                <li>{{ '公司介绍和联系方式' if lang == 'zh' else 'Company info & contact' }}</li>
-                            </ul>
-                            <p class="mb-0 mt-2">{{ '请问有什么可以帮您的？' if lang == 'zh' else 'What can I help you with?' }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <div class="input-group">
-                        <input type="text" id="chat-input" class="form-control" placeholder="{{ '输入您的问题...' if lang == 'zh' else 'Type your question...' }}" onkeypress="if(event.key==='Enter')sendMessage()">
-                        <button class="btn btn-primary" onclick="sendMessage()"><i class="bi bi-send"></i> {{ '发送' if lang == 'zh' else 'Send' }}</button>
-                    </div>
-                    <div class="mt-2 d-flex gap-1 flex-wrap">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="quickAsk('products')">{{ '产品' if lang == 'zh' else 'Products' }}</button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="quickAsk('price')">{{ '价格' if lang == 'zh' else 'Pricing' }}</button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="quickAsk('shipping')">{{ '物流' if lang == 'zh' else 'Shipping' }}</button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="quickAsk('payment')">{{ '支付' if lang == 'zh' else 'Payment' }}</button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="quickAsk('contact')">{{ '联系' if lang == 'zh' else 'Contact' }}</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="chat-container">
+    <div class="chat-header"><div class="bot-avatar">&#x1f99e;</div><div><h4>{% if lang == 'zh' %}龙虾助手{% else %}LobsterBot{% endif %}</h4><span>{% if lang == 'zh' %}AI 智能外贸客服{% else %}AI Trade Assistant{% endif %}</span></div></div>
+    <div class="chat-body" id="chat-body">
+        <div class="chat-message bot"><div class="bubble">{% if lang == 'zh' %}您好！我是龙虾助手 &#x1f99e;，可以帮您：<br>&bull; 产品咨询和推荐<br>&bull; 价格和起订量<br>&bull; 物流和运输<br>&bull; 支付方式<br>&bull; 公司信息<br><br>请问有什么可以帮您的？{% else %}Hello! I'm LobsterBot &#x1f99e;. I can help with:<br>&bull; Product inquiries<br>&bull; Pricing & MOQ<br>&bull; Shipping & logistics<br>&bull; Payment methods<br>&bull; Company info<br><br>How can I help?{% endif %}</div></div>
     </div>
+    <div class="chat-quick">
+        <button onclick="ask('products')">{% if lang == 'zh' %}产品{% else %}Products{% endif %}</button>
+        <button onclick="ask('price')">{% if lang == 'zh' %}价格{% else %}Pricing{% endif %}</button>
+        <button onclick="ask('shipping')">{% if lang == 'zh' %}物流{% else %}Shipping{% endif %}</button>
+        <button onclick="ask('payment')">{% if lang == 'zh' %}支付{% else %}Payment{% endif %}</button>
+        <button onclick="ask('contact')">{% if lang == 'zh' %}联系{% else %}Contact{% endif %}</button>
+    </div>
+    <div class="chat-footer"><input id="chat-input" placeholder="{% if lang == 'zh' %}输入问题...{% else %}Type message...{% endif %}" onkeypress="if(event.key==='Enter')send()"><button onclick="send()">{% if lang == 'zh' %}发送{% else %}Send{% endif %}</button></div>
 </div>
 {% endblock %}
 {% block extra_scripts %}
 <script>
-const chatBox = document.getElementById("chat-messages");
-const input = document.getElementById("chat-input");
-
-function addMessage(text, isUser) {
-    const div = document.createElement("div");
-    div.className = "d-flex mb-3 " + (isUser ? "justify-content-end" : "");
-    div.innerHTML = '<div class="rounded-3 p-3" style="max-width:80%;background:' + (isUser ? "#667eea;color:white" : "#f1f5f9") + '"><p class="mb-0" style="white-space:pre-wrap">' + text + "</p></div>";
-    chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
+const qs={products:"{{ '有什么产品？' if lang=='zh' else 'What products?' }}",price:"{{ '价格和MOQ？' if lang=='zh' else 'Pricing & MOQ?' }}",shipping:"{{ '如何发货？' if lang=='zh' else 'Shipping?' }}",payment:"{{ '支付方式？' if lang=='zh' else 'Payment?' }}",contact:"{{ '联系方式？' if lang=='zh' else 'Contact?' }}"};
+function ask(t){document.getElementById('chat-input').value=qs[t];send()}
+async function send(){
+    let m=document.getElementById('chat-input').value.trim();if(!m)return;
+    addMsg(m,true);document.getElementById('chat-input').value='';
+    addMsg('<div class="spinner-border spinner-border-sm"></div>',false);
+    let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m})});
+    let d=await r.json();
+    document.querySelector('#chat-body .chat-message:last-child').remove();
+    addMsg(d.reply.replace(/\n/g,'<br>'),false);
 }
-
-async function sendMessage() {
-    const msg = input.value.trim();
-    if (!msg) return;
-    addMessage(msg, true);
-    input.value = "";
-    const loading = document.createElement("div");
-    loading.className = "d-flex mb-3";
-    loading.innerHTML = '<div class="bg-light rounded-3 p-3"><div class="spinner-grow spinner-grow-sm text-primary"></div></div>';
-    chatBox.appendChild(loading);
-    chatBox.scrollTop = chatBox.scrollHeight;
-    try {
-        const res = await fetch("/api/chat", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg})});
-        const data = await res.json();
-        loading.remove();
-        addMessage(data.reply, false);
-    } catch(e) {
-        loading.remove();
-        addMessage("Sorry, something went wrong. Please try again.", false);
-    }
-}
-
-function quickAsk(topic) {
-    const qs = {products:"{{ '你们有什么产品？' if lang == 'zh' else 'What products do you sell?' }}",price:"{{ '价格和起订量是多少？' if lang == 'zh' else 'What are your prices and MOQ?' }}",shipping:"{{ '如何发货和运输？' if lang == 'zh' else 'How do you ship and deliver?' }}",payment:"{{ '支持哪些支付方式？' if lang == 'zh' else 'What payment methods do you accept?' }}",contact:"{{ '联系方式是什么？' if lang == 'zh' else 'How can I contact you?' }}"};
-    input.value = qs[topic];
-    sendMessage();
+function addMsg(t,isUser){
+    let d=document.createElement('div');d.className='chat-message '+(isUser?'user':'bot');
+    d.innerHTML='<div class="bubble">'+t+'</div>';
+    document.getElementById('chat-body').appendChild(d);
+    document.getElementById('chat-body').scrollTop=document.getElementById('chat-body').scrollHeight;
 }
 </script>
 {% endblock %}
