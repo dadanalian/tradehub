@@ -435,12 +435,20 @@ def create_app():
         if not current_user.is_admin:
             flash("Unauthorized", "danger")
             return redirect(url_for("index"))
+        from datetime import datetime, date
+        today = date.today()
+        today_start = datetime.combine(today, datetime.min.time())
+        today_orders = Order.query.filter(Order.created_at >= today_start).all()
         stats = {
             "total_orders": Order.query.count(),
+            "today_orders": len(today_orders),
+            "today_revenue": sum(o.total_amount for o in today_orders),
             "pending_orders": Order.query.filter_by(status="pending").count(),
+            "confirmed_orders": Order.query.filter_by(status="confirmed").count(),
+            "shipped_orders": Order.query.filter_by(status="shipped").count(),
             "total_revenue": db.session.query(db.func.sum(Order.total_amount)).scalar() or 0,
             "unread_messages": Message.query.filter_by(is_read=False, is_from_merchant=False).count(),
-            "recent_orders": Order.query.order_by(Order.created_at.desc()).limit(8).all(),
+            "recent_orders": Order.query.order_by(Order.created_at.desc()).limit(10).all(),
             "recent_messages": Message.query.filter_by(is_from_merchant=False).order_by(Message.created_at.desc()).limit(5).all(),
             "notifications": Notification.query.order_by(Notification.created_at.desc()).limit(10).all(),
         }
@@ -504,11 +512,10 @@ def create_app():
         content = request.form.get("content")
         if not content or not reply_to_email:
             return redirect(url_for("merchant_messages"))
-        msg = Message(sender_email="merchant@tradehub.com", sender_name="Merchant",
-                      content="[Re: " + reply_to_email + "] " + content, is_from_merchant=True, is_read=True)
+        msg = Message(sender_email=reply_to_email, sender_name="Merchant",
+                      content=content, is_from_merchant=True, is_read=True)
         db.session.add(msg)
         db.session.commit()
-        flash("Reply sent", "success")
         return redirect(url_for("merchant_messages"))
 
     @app.route("/api/messages", methods=["POST"])
@@ -567,7 +574,13 @@ def create_app():
 
     @app.route("/api/messages/all")
     def api_messages_all():
-        msgs = Message.query.order_by(Message.created_at.asc()).limit(100).all()
+        session_id = request.args.get("session_id", "")
+        if session_id:
+            msgs = Message.query.filter(
+                db.or_(Message.session_id == session_id, Message.sender_email == session_id)
+            ).order_by(Message.created_at.asc()).limit(100).all()
+        else:
+            msgs = Message.query.order_by(Message.created_at.asc()).limit(100).all()
         return jsonify([{"id": m.id, "content": m.content, "is_from_merchant": m.is_from_merchant, "is_read": m.is_read, "created_at": m.created_at.strftime("%H:%M"), "sender_name": m.sender_name, "sender_email": m.sender_email} for m in msgs])
 
     @app.route("/api/messages/unread")

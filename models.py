@@ -1,4 +1,4 @@
-﻿from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -105,6 +105,7 @@ class Inquiry(db.Model):
 class Message(db.Model):
     __tablename__ = 'messages'
     id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(64), index=True)
     sender_email = db.Column(db.String(120), nullable=False)
     sender_name = db.Column(db.String(100))
     content = db.Column(db.Text, nullable=False)

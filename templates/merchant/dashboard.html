@@ -1,41 +1,27 @@
 {% extends "base.html" %}
-{% block title %}Merchant Dashboard - TradeHub{% endblock %}
+{% block title %}Dashboard - TradeHub Merchant{% endblock %}
 {% block content %}
 <div class="merchant-layout">
-<!-- Sidebar -->
 {% set page = 'dashboard' %}
 {% include 'merchant/_sidebar.html' %}
 
-<!-- Main Content -->
 <main class="merchant-main">
     <header class="merchant-header">
         <div>
             <h1>Dashboard</h1>
-            <p>Welcome back{{ ', ' + current_user.username if current_user.username }}. Here is your store overview.</p>
-        </div>
-        <div class="merchant-header-actions">
-            <span class="merchant-date"></span>
+            <p>Store overview & today performance</p>
         </div>
     </header>
 
-    <!-- Stat Cards -->
+    <!-- KPI Cards -->
     <div class="stat-grid-v2">
         <div class="stat-card-v2">
             <div class="stat-icon-v2" style="background:#dbeafe;color:#2563eb">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="5" y1="8" x2="19" y2="8"/></svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
             </div>
             <div class="stat-body-v2">
-                <div class="stat-label-v2">Total Orders</div>
-                <div class="stat-value-v2">{{ stats.total_orders }}</div>
-            </div>
-        </div>
-        <div class="stat-card-v2">
-            <div class="stat-icon-v2" style="background:#fef3c7;color:#d97706">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-            <div class="stat-body-v2">
-                <div class="stat-label-v2">Pending</div>
-                <div class="stat-value-v2" style="color:#d97706">{{ stats.pending_orders }}</div>
+                <div class="stat-label-v2">Today Orders</div>
+                <div class="stat-value-v2">{{ stats.today_orders }}</div>
             </div>
         </div>
         <div class="stat-card-v2">
@@ -43,8 +29,17 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
             <div class="stat-body-v2">
-                <div class="stat-label-v2">Total Revenue</div>
-                <div class="stat-value-v2" style="color:#059669">${{ "%.2f"|format(stats.total_revenue) }}</div>
+                <div class="stat-label-v2">Today Revenue</div>
+                <div class="stat-value-v2" style="color:#059669">${{ "%.2f"|format(stats.today_revenue) }}</div>
+            </div>
+        </div>
+        <div class="stat-card-v2">
+            <div class="stat-icon-v2" style="background:#fef3c7;color:#d97706">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="stat-body-v2">
+                <div class="stat-label-v2">Pending Orders</div>
+                <div class="stat-value-v2" style="color:#d97706">{{ stats.pending_orders }}</div>
             </div>
         </div>
         <div class="stat-card-v2">
@@ -58,78 +53,148 @@
         </div>
     </div>
 
-    <div class="merchant-grid-2col">
-        <!-- Recent Orders -->
+    <!-- Order Status Pipeline -->
+    <div class="merchant-grid-2col" style="margin-bottom:20px">
         <div class="merchant-card">
-            <div class="merchant-card-header">
-                <h3>Recent Orders</h3>
-                <a href="{{ url_for('merchant_orders') }}" class="link-sm">View All &rarr;</a>
-            </div>
-            <div class="merchant-card-body" style="padding:0">
-                {% if stats.recent_orders %}
-                <table class="merchant-table">
-                    <thead><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-                    <tbody>
-                    {% for o in stats.recent_orders %}
-                    <tr>
-                        <td><b>#{{ o.id }}</b></td>
-                        <td>
-                            <div>{{ o.contact_name }}</div>
-                            <div style="font-size:11px;color:var(--gray)">{{ o.contact_email }}</div>
-                        </td>
-                        <td><b>${{ "%.2f"|format(o.total_amount) }}</b></td>
-                        <td><span class="status-badge status-{{ o.status }}">{{ o.status }}</span></td>
-                        <td><a href="{{ url_for('merchant_order_detail', order_id=o.id) }}" class="link-sm">View</a></td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <div style="padding:40px;text-align:center;color:var(--gray)">No orders yet</div>
-                {% endif %}
+            <div class="merchant-card-header"><h3>Order Pipeline</h3></div>
+            <div class="merchant-card-body">
+                <div class="pipeline">
+                    <div class="pipeline-step">
+                        <div class="pipeline-num" style="background:#fef3c7;color:#92400e">{{ stats.pending_orders }}</div>
+                        <div class="pipeline-label">Pending</div>
+                    </div>
+                    <div class="pipeline-arrow">&rarr;</div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-num" style="background:#dbeafe;color:#1e40af">{{ stats.confirmed_orders }}</div>
+                        <div class="pipeline-label">Confirmed</div>
+                    </div>
+                    <div class="pipeline-arrow">&rarr;</div>
+                    <div class="pipeline-step">
+                        <div class="pipeline-num" style="background:#d1fae5;color:#065f46">{{ stats.shipped_orders }}</div>
+                        <div class="pipeline-label">Shipped</div>
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-top:16px;font-size:12px;color:#64748b">
+                    <span>Total Orders: <b>{{ stats.total_orders }}</b></span>
+                    <span>Total Revenue: <b style="color:#059669">${{ "%.2f"|format(stats.total_revenue) }}</b></span>
+                </div>
             </div>
         </div>
 
-        <!-- Recent Messages -->
+        <!-- Quick Actions -->
         <div class="merchant-card">
-            <div class="merchant-card-header">
-                <h3>Recent Messages</h3>
-                <a href="{{ url_for('merchant_messages') }}" class="link-sm">View All &rarr;</a>
-            </div>
+            <div class="merchant-card-header"><h3>Quick Actions</h3></div>
             <div class="merchant-card-body">
-                {% if stats.recent_messages %}
-                {% for msg in stats.recent_messages %}
-                <div class="msg-preview {{ 'msg-unread' if not msg.is_read }}">
-                    <div class="msg-avatar-sm">{{ msg.sender_name[0]|upper }}</div>
-                    <div class="msg-preview-body">
-                        <div class="msg-preview-header">
-                            <b>{{ msg.sender_name }}</b>
-                            <span>{{ msg.created_at.strftime('%m/%d %H:%M') }}</span>
-                        </div>
-                        <div class="msg-preview-text">{{ (msg.content or '')[:80] }}{% if msg.content and msg.content|length > 80 %}...{% endif %}</div>
-                    </div>
+                <div class="quick-actions">
+                    <a href="{{ url_for('merchant_orders') }}?status=pending" class="qa-btn">
+                        <span class="qa-icon" style="background:#fef3c7">📋</span>
+                        <span class="qa-text">Review Pending Orders</span>
+                    </a>
+                    <a href="{{ url_for('merchant_messages') }}" class="qa-btn">
+                        <span class="qa-icon" style="background:#fee2e2">💬</span>
+                        <span class="qa-text">View Messages</span>
+                    </a>
+                    <a href="{{ url_for('admin_products') }}" class="qa-btn">
+                        <span class="qa-icon" style="background:#dbeafe">📦</span>
+                        <span class="qa-text">Manage Products</span>
+                    </a>
+                    <a href="{{ url_for('merchant_settings') }}" class="qa-btn">
+                        <span class="qa-icon" style="background:#e2e8f0">⚙️</span>
+                        <span class="qa-text">Store Settings</span>
+                    </a>
                 </div>
-                {% endfor %}
-                {% else %}
-                <div style="padding:40px;text-align:center;color:var(--gray)">No messages yet</div>
-                {% endif %}
             </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders Table -->
+    <div class="merchant-card" style="margin-bottom:20px">
+        <div class="merchant-card-header">
+            <h3>Recent Orders</h3>
+            <a href="{{ url_for('merchant_orders') }}" class="link-sm">View All &rarr;</a>
+        </div>
+        <div class="merchant-card-body" style="padding:0">
+            {% if stats.recent_orders %}
+            <table class="merchant-table">
+                <thead><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Date</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                {% for o in stats.recent_orders %}
+                <tr>
+                    <td><b>#{{ o.id }}</b></td>
+                    <td>
+                        <div>{{ o.contact_name }}</div>
+                        <div style="font-size:11px;color:#94a3b8">{{ o.contact_email }}</div>
+                    </td>
+                    <td><b>${{ "%.2f"|format(o.total_amount) }}</b></td>
+                    <td style="font-size:12px;color:#64748b">{{ o.created_at.strftime('%m/%d %H:%M') }}</td>
+                    <td><span class="status-badge status-{{ o.status }}">{{ o.status }}</span></td>
+                    <td><a href="{{ url_for('merchant_order_detail', order_id=o.id) }}" class="link-sm">View</a></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="padding:40px;text-align:center;color:#94a3b8">No orders yet. Share your store link to start receiving orders.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Messages -->
+    <div class="merchant-card">
+        <div class="merchant-card-header">
+            <h3>Recent Customer Messages</h3>
+            <a href="{{ url_for('merchant_messages') }}" class="link-sm">View All &rarr;</a>
+        </div>
+        <div class="merchant-card-body">
+            {% if stats.recent_messages %}
+            {% for msg in stats.recent_messages %}
+            <div class="msg-preview {{ 'msg-unread' if not msg.is_read }}">
+                <div class="msg-avatar-sm">{{ msg.sender_name[0]|upper }}</div>
+                <div class="msg-preview-body">
+                    <div class="msg-preview-header">
+                        <b>{{ msg.sender_name }}</b>
+                        <span>{{ msg.created_at.strftime('%m/%d %H:%M') }}</span>
+                    </div>
+                    <div class="msg-preview-text">{{ (msg.content or '')[:80] }}{% if msg.content|length > 80 %}...{% endif %}</div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div style="padding:30px;text-align:center;color:#94a3b8">No messages yet</div>
+            {% endif %}
         </div>
     </div>
 </main>
 </div>
 
-
+<style>
+.pipeline { display: flex; align-items: center; gap: 16px; justify-content: center; }
+.pipeline-step { text-align: center; }
+.pipeline-num { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; margin: 0 auto 6px; }
+.pipeline-label { font-size: 12px; color: #64748b; font-weight: 500; }
+.pipeline-arrow { font-size: 20px; color: #cbd5e1; }
+.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.qa-btn { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; text-decoration: none; transition: all 0.15s; }
+.qa-btn:hover { border-color: #2563eb; background: #f8fafc; }
+.qa-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.qa-text { font-size: 12px; color: #1e293b; font-weight: 500; }
+.msg-preview { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+.msg-preview:last-child { border-bottom: none; }
+.msg-unread { background: #fffbeb; margin: 0 -20px; padding: 10px 20px; }
+.msg-avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.msg-preview-body { flex: 1; min-width: 0; }
+.msg-preview-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px; }
+.msg-preview-header span { font-size: 10px; color: #94a3b8; }
+.msg-preview-text { font-size: 12px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
 
 <script>
-setInterval(async()=>{
+setInterval(async ()=>{
     try {
         let r = await fetch('/api/messages/unread');
         let d = await r.json();
-        document.getElementById('dash-unread').textContent = d.count;
-        let sb = document.getElementById('sidebar-unread');
-        sb.textContent = d.count;
-        sb.style.display = d.count > 0 ? 'inline' : 'none';
+        let el = document.getElementById('dash-unread');
+        if (el) el.textContent = d.count;
     } catch(e) {}
 }, 30000);
 </script>
