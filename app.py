@@ -512,7 +512,10 @@ def create_app():
         content = request.form.get("content")
         if not content or not reply_to_email:
             return redirect(url_for("merchant_messages"))
-        msg = Message(sender_email=reply_to_email, sender_name="Merchant",
+        # Find customer's session_id from their original message
+        customer_msg = Message.query.filter_by(sender_email=reply_to_email, is_from_merchant=False).order_by(Message.created_at.desc()).first()
+        session_id = customer_msg.session_id if customer_msg else reply_to_email
+        msg = Message(session_id=session_id, sender_email=reply_to_email, sender_name="Merchant",
                       content=content, is_from_merchant=True, is_read=True)
         db.session.add(msg)
         db.session.commit()
@@ -576,12 +579,10 @@ def create_app():
     def api_messages_all():
         session_id = request.args.get("session_id", "")
         if session_id:
-            msgs = Message.query.filter(
-                db.or_(Message.session_id == session_id, Message.sender_email == session_id)
-            ).order_by(Message.created_at.asc()).limit(100).all()
+            msgs = Message.query.filter_by(session_id=session_id).order_by(Message.created_at.asc()).limit(100).all()
         else:
             msgs = Message.query.order_by(Message.created_at.asc()).limit(100).all()
-        return jsonify([{"id": m.id, "content": m.content, "is_from_merchant": m.is_from_merchant, "is_read": m.is_read, "created_at": m.created_at.strftime("%H:%M"), "sender_name": m.sender_name, "sender_email": m.sender_email} for m in msgs])
+        return jsonify([{"id": m.id, "content": m.content, "is_from_merchant": m.is_from_merchant, "is_read": m.is_read, "created_at": m.created_at.strftime("%H:%M"), "sender_name": m.sender_name, "sender_email": m.sender_email, "session_id": m.session_id or ""} for m in msgs])
 
     @app.route("/api/messages/unread")
     @login_required
