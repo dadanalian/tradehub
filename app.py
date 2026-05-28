@@ -589,6 +589,12 @@ def create_app():
         result = subprocess.run(["git", "pull", "origin", "master"], capture_output=True, text=True, cwd=os.path.dirname(os.path.abspath(__file__)))
         try:
             db.create_all()
+            # Add session_id column if missing
+            try:
+                db.session.execute(db.text("ALTER TABLE messages ADD COLUMN session_id VARCHAR(100)"))
+                db.session.commit()
+            except:
+                pass
             auto_seed()
             admin = User.query.filter_by(username="admin").first()
             if admin:
@@ -609,6 +615,12 @@ def create_app():
         # Re-seed
         try:
             db.create_all()
+            # Add session_id column if missing
+            try:
+                db.session.execute(db.text("ALTER TABLE messages ADD COLUMN session_id VARCHAR(100)"))
+                db.session.commit()
+            except:
+                pass
             auto_seed()
         except:
             pass

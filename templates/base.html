@@ -104,7 +104,8 @@ async function loadHistory(){
         });
         d.scrollTop=d.scrollHeight;
     }catch(e){
-        d.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">Could not load messages</div>';
+        console.log(e);
+        d.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px">Send us a message! We reply within minutes.</div>';
     }
 }
 
