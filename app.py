@@ -544,6 +544,22 @@ def create_app():
             return redirect(url_for("merchant_settings"))
         return render_template("merchant/settings.html", settings=settings)
 
+
+    @app.route("/admin/auto-update")
+    @login_required
+    def auto_update():
+        if not current_user.is_admin:
+            return "Unauthorized", 403
+        import subprocess
+        result = subprocess.run(["git", "pull", "origin", "master"], capture_output=True, text=True, cwd=os.path.dirname(os.path.abspath(__file__)))
+        # Re-seed
+        try:
+            db.create_all()
+            auto_seed()
+        except:
+            pass
+        return f"<pre>Git Pull:\n{result.stdout}\n{result.stderr}\n\nSeed: Done.\n\n<a href='/'>Go to site</a></pre>"
+
     return app
 
 def get_chatbot_response(message):
