@@ -1,0 +1,29 @@
+<div style="background:var(--dark);padding:0">
+<div class="container" style="display:flex;align-items:center;justify-content:space-between;height:48px">
+<div style="display:flex;align-items:center;gap:20px">
+<a href="/" style="color:#fff;font-size:16px;font-weight:800">TradeHub</a>
+<span style="color:#94a3b8;font-size:13px">Merchant Dashboard</span>
+</div>
+<nav style="display:flex;gap:4px">
+<a href="{{ url_for('merchant') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if request.endpoint=='merchant' }}">Dashboard</a>
+<a href="{{ url_for('merchant_orders') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'order' in request.endpoint and 'merchant' in request.endpoint }}">Orders</a>
+<a href="{{ url_for('merchant_messages') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'message' in request.endpoint }}">Messages <span id="unread-badge" style="background:#ef4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;display:none">0</span></a>
+<a href="{{ url_for('admin_products') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px">Products</a>
+<a href="{{ url_for('merchant_settings') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'setting' in request.endpoint }}">Settings</a>
+</nav>
+</div></div>
+<div class="container" style="margin:20px auto;max-width:600px">
+<h2 style="font-size:20px;font-weight:700;margin-bottom:20px">Merchant Settings</h2>
+<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+<form method="POST">
+<h3 style="font-size:14px;font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--blue)">Notification Settings</h3>
+<div class="form-group"><label>Email for Notifications</label><input name="notify_email" value="{{ settings.notify_email or '' }}" placeholder="your@email.com"><small style="color:var(--gray)">New orders and messages will be sent here</small></div>
+<h3 style="font-size:14px;font-weight:700;margin-bottom:12px;margin-top:24px;padding-bottom:8px;border-bottom:2px solid var(--blue)">Payment Settings</h3>
+<div class="form-group"><label>PayPal Email</label><input name="paypal_email" value="{{ settings.paypal_email or '' }}" placeholder="paypal@email.com"></div>
+<div class="form-group"><label>Bank Name</label><input name="bank_name" value="{{ settings.bank_name or '' }}" placeholder="e.g. Industrial and Commercial Bank of China"></div>
+<div class="form-group"><label>Bank Account Number</label><input name="bank_account" value="{{ settings.bank_account or '' }}" placeholder="Account number"></div>
+<div class="form-group"><label>SWIFT Code</label><input name="bank_swift" value="{{ settings.bank_swift or '' }}" placeholder="e.g. ICBKCNBJ"></div>
+<div class="form-group"><label>Account Holder Name</label><input name="account_holder" value="{{ settings.account_holder or '' }}" placeholder="Full name as on bank account"></div>
+<button type="submit" class="submit-btn">Save Settings</button>
+</form></div>
+</div>

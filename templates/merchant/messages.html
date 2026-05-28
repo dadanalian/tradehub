@@ -1,0 +1,41 @@
+<div style="background:var(--dark);padding:0">
+<div class="container" style="display:flex;align-items:center;justify-content:space-between;height:48px">
+<div style="display:flex;align-items:center;gap:20px">
+<a href="/" style="color:#fff;font-size:16px;font-weight:800">TradeHub</a>
+<span style="color:#94a3b8;font-size:13px">Merchant Dashboard</span>
+</div>
+<nav style="display:flex;gap:4px">
+<a href="{{ url_for('merchant') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if request.endpoint=='merchant' }}">Dashboard</a>
+<a href="{{ url_for('merchant_orders') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'order' in request.endpoint and 'merchant' in request.endpoint }}">Orders</a>
+<a href="{{ url_for('merchant_messages') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'message' in request.endpoint }}">Messages <span id="unread-badge" style="background:#ef4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;display:none">0</span></a>
+<a href="{{ url_for('admin_products') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px">Products</a>
+<a href="{{ url_for('merchant_settings') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'setting' in request.endpoint }}">Settings</a>
+</nav>
+</div></div>
+<div class="container" style="margin:20px auto;max-width:1000px">
+<h2 style="font-size:20px;font-weight:700;margin-bottom:16px">Messages</h2>
+{% if conversations %}
+{% for email, msgs in conversations.items() %}
+<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div><b>{{ msgs[0].sender_name }}</b> <span style="color:var(--gray);font-size:12px">({{ email }})</span></div>
+<span style="font-size:11px;color:var(--gray)">{{ msgs[0].created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+</div>
+{% for msg in msgs|reverse %}
+<div style="padding:8px 12px;margin:4px 0;border-radius:8px;font-size:13px;{{ 'background:var(--blue-light);margin-left:40px' if msg.is_from_merchant else 'background:var(--light-gray);margin-right:40px' }}">
+{{ msg.content }}
+<div style="font-size:10px;color:var(--gray);margin-top:4px">{{ msg.created_at.strftime('%H:%M') }}</div>
+</div>{% endfor %}
+<form action="{{ url_for('merchant_reply') }}" method="POST" style="display:flex;gap:8px;margin-top:10px">
+<input type="hidden" name="email" value="{{ email }}">
+<input name="content" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:20px;font-size:13px;outline:none" placeholder="Type reply..." required>
+<button type="submit" class="btn-blue" style="padding:10px 20px;border-radius:20px;font-size:13px">Reply</button>
+</form>
+</div>{% endfor %}
+{% else %}
+<div class="empty"><div class="icon">💬</div><h3>No messages yet</h3></div>
+{% endif %}
+</div>
+<script>
+setInterval(async()=>{location.reload()},60000);
+</script>

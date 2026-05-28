@@ -2,7 +2,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
-from models import db, User, Category, Product, CartItem, Order, OrderItem, Inquiry
+from models import db, User, Category, Product, CartItem, Order, OrderItem, Inquiry, Message, Notification, MerchantSettings
 from translations import t, LANGUAGES
 
 def create_app():
@@ -226,6 +226,7 @@ def create_app():
                 session.pop("guest_cart", None)
             db.session.commit()
             flash("Order submitted successfully! We will contact you soon.", "success")
+            notify_merchant("new_order", f"New Order #{order.id}", f"Customer: {order.contact_name}\nEmail: {order.contact_email}\nAmount: ${order.total_amount:.2f}\nAddress: {order.shipping_address}")
             return redirect(url_for("payment_info", order_id=order.id))
         return render_template("orders/checkout.html", items=items, total=total)
 
@@ -259,6 +260,7 @@ def create_app():
         ))
         db.session.commit()
         flash("Inquiry sent! We will reply soon.", "success")
+        notify_merchant("new_inquiry", f"New Inquiry about #{product_id}", f"From: {inquiry.name}\nEmail: {inquiry.email}\n\n{inquiry.message[:200]}")
         return redirect(url_for("product_detail", product_id=product_id))
 
     @app.route("/chat")
@@ -377,6 +379,171 @@ def create_app():
         db.session.commit()
         return redirect(url_for("admin_inquiries"))
 
+
+    def notify_merchant(ntype, title, content):
+        """Send notification and try email"""
+        notif = Notification(type=ntype, title=title, content=content)
+        db.session.add(notif)
+        db.session.commit()
+        # Try email notification
+        settings = MerchantSettings.query.first()
+        if settings and settings.notify_email:
+            try:
+                send_notification_email(settings.notify_email, title, content)
+            except:
+                pass  # Email failed silently, notification still in DB
+
+    def send_notification_email(to_email, subject, body):
+        import smtplib
+        from email.mime.text import MIMEText
+        settings = MerchantSettings.query.first()
+        if not settings or not settings.notify_email:
+            return
+        msg = MIMEText(body, "plain", "utf-8")
+        msg["Subject"] = subject
+        msg["From"] = "TradeHub <tradehub@notification.com>"
+        msg["To"] = to_email
+        # Use QQ SMTP as default
+        try:
+            s = smtplib.SMTP_SSL("smtp.qq.com", 465, timeout=10)
+            s.login("1966899806@qq.com", "")  # Will be configured via settings
+            s.sendmail("1966899806@qq.com", [to_email], msg.as_string())
+            s.quit()
+        except:
+            pass  # SMTP not configured yet
+
+
+    # ===== Merchant Dashboard =====
+    @app.route("/merchant")
+    @login_required
+    def merchant():
+        if not current_user.is_admin:
+            flash("Unauthorized", "danger")
+            return redirect(url_for("index"))
+        stats = {
+            "total_orders": Order.query.count(),
+            "pending_orders": Order.query.filter_by(status="pending").count(),
+            "total_revenue": db.session.query(db.func.sum(Order.total_amount)).scalar() or 0,
+            "unread_messages": Message.query.filter_by(is_read=False, is_from_merchant=False).count(),
+            "recent_orders": Order.query.order_by(Order.created_at.desc()).limit(8).all(),
+            "recent_messages": Message.query.filter_by(is_from_merchant=False).order_by(Message.created_at.desc()).limit(5).all(),
+            "notifications": Notification.query.order_by(Notification.created_at.desc()).limit(10).all(),
+        }
+        return render_template("merchant/dashboard.html", stats=stats)
+
+    @app.route("/merchant/orders")
+    @login_required
+    def merchant_orders():
+        if not current_user.is_admin: return redirect(url_for("index"))
+        status_filter = request.args.get("status", "")
+        query = Order.query
+        if status_filter:
+            query = query.filter_by(status=status_filter)
+        orders = query.order_by(Order.created_at.desc()).all()
+        return render_template("merchant/orders.html", orders=orders, status_filter=status_filter)
+
+    @app.route("/merchant/order/<int:order_id>")
+    @login_required
+    def merchant_order_detail(order_id):
+        if not current_user.is_admin: return redirect(url_for("index"))
+        order = Order.query.get_or_404(order_id)
+        return render_template("merchant/order_detail.html", order=order)
+
+    @app.route("/merchant/order/<int:order_id>/status", methods=["POST"])
+    @login_required
+    def merchant_update_status(order_id):
+        if not current_user.is_admin: return jsonify({"error": "Unauthorized"}), 403
+        order = Order.query.get_or_404(order_id)
+        new_status = request.form.get("status")
+        tracking = request.form.get("tracking_number", "")
+        if new_status in ["pending", "confirmed", "shipped", "delivered", "cancelled"]:
+            order.status = new_status
+            if tracking:
+                order.notes = (order.notes or "") + f"\nTracking: {tracking}"
+            db.session.commit()
+        return redirect(url_for("merchant_order_detail", order_id=order_id))
+
+    # ===== Messages / Chat =====
+    @app.route("/merchant/messages")
+    @login_required
+    def merchant_messages():
+        if not current_user.is_admin: return redirect(url_for("index"))
+        messages = Message.query.order_by(Message.created_at.desc()).all()
+        # Mark all as read
+        Message.query.filter_by(is_read=False, is_from_merchant=False).update({"is_read": True})
+        db.session.commit()
+        # Group by sender
+        conversations = {}
+        for msg in messages:
+            key = msg.sender_email
+            if key not in conversations:
+                conversations[key] = []
+            conversations[key].append(msg)
+        return render_template("merchant/messages.html", conversations=conversations, messages=messages)
+
+    @app.route("/merchant/messages/reply", methods=["POST"])
+    @login_required
+    def merchant_reply():
+        if not current_user.is_admin: return jsonify({"error": "Unauthorized"}), 403
+        reply_to_email = request.form.get("email")
+        content = request.form.get("content")
+        if not content or not reply_to_email:
+            return redirect(url_for("merchant_messages"))
+        msg = Message(sender_email="merchant@tradehub.com", sender_name="Merchant",
+                      content=content, is_from_merchant=True, is_read=True)
+        db.session.add(msg)
+        db.session.commit()
+        flash("Reply sent", "success")
+        return redirect(url_for("merchant_messages"))
+
+    @app.route("/api/messages", methods=["POST"])
+    def api_send_message():
+        data = request.json
+        msg = Message(
+            sender_email=data.get("email", "anonymous"),
+            sender_name=data.get("name", "Customer"),
+            content=data.get("content", ""),
+            is_from_merchant=False,
+            is_read=False,
+            order_id=data.get("order_id")
+        )
+        db.session.add(msg)
+        db.session.commit()
+        # Notify merchant
+        notify_merchant("new_message", f"New message from {msg.sender_name}",
+                        f"From: {msg.sender_name} ({msg.sender_email})\n\n{msg.content[:200]}")
+        return jsonify({"success": True})
+
+    @app.route("/api/messages/unread")
+    @login_required
+    def api_unread_count():
+        if not current_user.is_admin:
+            return jsonify({"count": 0})
+        count = Message.query.filter_by(is_read=False, is_from_merchant=False).count()
+        return jsonify({"count": count})
+
+    # ===== Merchant Settings =====
+    @app.route("/merchant/settings", methods=["GET", "POST"])
+    @login_required
+    def merchant_settings():
+        if not current_user.is_admin: return redirect(url_for("index"))
+        settings = MerchantSettings.query.first()
+        if not settings:
+            settings = MerchantSettings()
+            db.session.add(settings)
+            db.session.commit()
+        if request.method == "POST":
+            settings.notify_email = request.form.get("notify_email", "")
+            settings.paypal_email = request.form.get("paypal_email", "")
+            settings.bank_name = request.form.get("bank_name", "")
+            settings.bank_account = request.form.get("bank_account", "")
+            settings.bank_swift = request.form.get("bank_swift", "")
+            settings.account_holder = request.form.get("account_holder", "")
+            db.session.commit()
+            flash("Settings saved", "success")
+            return redirect(url_for("merchant_settings"))
+        return render_template("merchant/settings.html", settings=settings)
+
     return app
 
 def get_chatbot_response(message):
@@ -454,6 +621,9 @@ def auto_seed():
             image_url=f"https://placehold.co/600x600/2563eb/ffffff?text={name_en.replace(' ', '+')}"
         ))
     db.session.commit()
+    if not MerchantSettings.query.first():
+        db.session.add(MerchantSettings(notify_email="1966899806@qq.com"))
+        db.session.commit()
     print("Auto-seed complete!")
 
 app = create_app()

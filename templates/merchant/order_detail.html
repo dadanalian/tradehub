@@ -1,0 +1,73 @@
+<div style="background:var(--dark);padding:0">
+<div class="container" style="display:flex;align-items:center;justify-content:space-between;height:48px">
+<div style="display:flex;align-items:center;gap:20px">
+<a href="/" style="color:#fff;font-size:16px;font-weight:800">TradeHub</a>
+<span style="color:#94a3b8;font-size:13px">Merchant Dashboard</span>
+</div>
+<nav style="display:flex;gap:4px">
+<a href="{{ url_for('merchant') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if request.endpoint=='merchant' }}">Dashboard</a>
+<a href="{{ url_for('merchant_orders') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'order' in request.endpoint and 'merchant' in request.endpoint }}">Orders</a>
+<a href="{{ url_for('merchant_messages') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'message' in request.endpoint }}">Messages <span id="unread-badge" style="background:#ef4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;display:none">0</span></a>
+<a href="{{ url_for('admin_products') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px">Products</a>
+<a href="{{ url_for('merchant_settings') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'setting' in request.endpoint }}">Settings</a>
+</nav>
+</div></div>
+<div class="container" style="margin:20px auto;max-width:900px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+<h2 style="font-size:18px;font-weight:700">Order #{{ order.id }}</h2>
+<span class="status status-{{ order.status }}" style="font-size:14px;padding:6px 16px">{{ order.status }}</span>
+</div>
+
+<div style="display:flex;gap:16px">
+<div style="flex:2">
+<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px">
+<h3 style="font-size:14px;font-weight:700;margin-bottom:10px">Order Items</h3>
+{% for item in order.items %}
+<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+<img src="{{ item.product.image_url or 'https://placehold.co/48/f1f5f9/94a3b8' }}" width="48" style="border:1px solid var(--border);border-radius:4px">
+<div style="flex:1"><b>{{ item.product.name_en }}</b><br><small style="color:var(--gray)">MOQ: {{ item.product.moq }} | Stock: {{ item.product.stock }}</small></div>
+<div style="text-align:right"><span style="color:var(--gray);font-size:12px">x{{ item.quantity }}</span><br><b style="color:var(--blue)">${{ "%.2f"|format(item.price*item.quantity) }}</b></div>
+</div>{% endfor %}
+<div style="text-align:right;margin-top:12px;font-size:18px;font-weight:700">Total: <span style="color:var(--blue)">${{ "%.2f"|format(order.total_amount) }}</span></div>
+</div>
+
+<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+<h3 style="font-size:14px;font-weight:700;margin-bottom:10px">Update Status</h3>
+<form action="{{ url_for('merchant_update_status', order_id=order.id) }}" method="POST">
+<div class="form-group"><label>Status</label>
+<select name="status" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px">
+{% for s in ['pending','confirmed','shipped','delivered','cancelled'] %}
+<option value="{{ s }}" {{ 'selected' if order.status==s }}>{{ s|capitalize }}</option>
+{% endfor %}
+</select></div>
+<div class="form-group"><label>Tracking Number (for shipped orders)</label>
+<input name="tracking_number" placeholder="e.g. DHL 1234567890"></div>
+<button type="submit" class="btn-blue" style="width:100%">Update</button>
+</form></div>
+</div>
+
+<div style="flex:1">
+<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px">
+<h3 style="font-size:14px;font-weight:700;margin-bottom:10px">Customer Info</h3>
+<p style="font-size:13px;margin:6px 0"><b>Name:</b> {{ order.contact_name }}</p>
+<p style="font-size:13px;margin:6px 0"><b>Email:</b> {{ order.contact_email }}</p>
+{% if order.contact_phone %}<p style="font-size:13px;margin:6px 0"><b>Phone:</b> {{ order.contact_phone }}</p>{% endif %}
+<p style="font-size:13px;margin:6px 0"><b>Address:</b><br>{{ order.shipping_address }}</p>
+<p style="font-size:13px;margin:6px 0"><b>Date:</b> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+{% if order.notes %}<p style="font-size:13px;margin:6px 0"><b>Notes:</b><br>{{ order.notes }}</p>{% endif %}
+</div>
+
+<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+<h3 style="font-size:14px;font-weight:700;margin-bottom:10px">Shipping Guide</h3>
+<p style="font-size:12px;color:var(--gray);line-height:1.8">
+<b>1. Confirm Order</b><br>
+Verify stock and customer details. Set status to "confirmed".<br><br>
+<b>2. Prepare Shipment</b><br>
+Pack items securely. Choose carrier (DHL/FedEx/UPS for express, sea freight for bulk).<br><br>
+<b>3. Ship & Update</b><br>
+Set status to "shipped" and add tracking number. Customer receives automatic update.<br><br>
+<b>4. Delivery</b><br>
+Set to "delivered" when confirmed. Follow up with customer for feedback.
+</p>
+</div>
+</div></div></div>
