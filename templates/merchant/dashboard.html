@@ -1,60 +1,136 @@
-<div style="background:var(--dark);padding:0">
-<div class="container" style="display:flex;align-items:center;justify-content:space-between;height:48px">
-<div style="display:flex;align-items:center;gap:20px">
-<a href="/" style="color:#fff;font-size:16px;font-weight:800">TradeHub</a>
-<span style="color:#94a3b8;font-size:13px">Merchant Dashboard</span>
-</div>
-<nav style="display:flex;gap:4px">
-<a href="{{ url_for('merchant') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if request.endpoint=='merchant' }}">Dashboard</a>
-<a href="{{ url_for('merchant_orders') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'order' in request.endpoint and 'merchant' in request.endpoint }}">Orders</a>
-<a href="{{ url_for('merchant_messages') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'message' in request.endpoint }}">Messages <span id="unread-badge" style="background:#ef4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;display:none">0</span></a>
-<a href="{{ url_for('admin_products') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px">Products</a>
-<a href="{{ url_for('merchant_settings') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'setting' in request.endpoint }}">Settings</a>
-</nav>
-</div></div>
-<div class="container" style="margin:20px auto">
-<h2 style="font-size:22px;font-weight:700;margin-bottom:16px">Dashboard</h2>
-<div class="stat-grid">
-<div class="stat-card" style="border-left:3px solid var(--blue)"><div class="num" style="color:var(--blue)">{{ stats.total_orders }}</div><div class="lbl">Total Orders</div></div>
-<div class="stat-card" style="border-left:3px solid #f59e0b"><div class="num" style="color:#f59e0b">{{ stats.pending_orders }}</div><div class="lbl">Pending</div></div>
-<div class="stat-card" style="border-left:3px solid #10b981"><div class="num" style="color:#10b981">${{ "%.2f"|format(stats.total_revenue) }}</div><div class="lbl">Total Revenue</div></div>
-<div class="stat-card" style="border-left:3px solid #ef4444"><div class="num" style="color:#ef4444" id="unread-msg-count">{{ stats.unread_messages }}</div><div class="lbl">Unread Messages</div></div>
+{% extends "base.html" %}
+{% block title %}Merchant Dashboard - TradeHub{% endblock %}
+{% block content %}
+<div class="merchant-layout">
+<!-- Sidebar -->
+{% set page = 'dashboard' %}
+{% include 'merchant/_sidebar.html' %}
+
+<!-- Main Content -->
+<main class="merchant-main">
+    <header class="merchant-header">
+        <div>
+            <h1>Dashboard</h1>
+            <p>Welcome back{{ ', ' + current_user.username if current_user.username }}. Here is your store overview.</p>
+        </div>
+        <div class="merchant-header-actions">
+            <span class="merchant-date"></span>
+        </div>
+    </header>
+
+    <!-- Stat Cards -->
+    <div class="stat-grid-v2">
+        <div class="stat-card-v2">
+            <div class="stat-icon-v2" style="background:#dbeafe;color:#2563eb">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="5" y1="8" x2="19" y2="8"/></svg>
+            </div>
+            <div class="stat-body-v2">
+                <div class="stat-label-v2">Total Orders</div>
+                <div class="stat-value-v2">{{ stats.total_orders }}</div>
+            </div>
+        </div>
+        <div class="stat-card-v2">
+            <div class="stat-icon-v2" style="background:#fef3c7;color:#d97706">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="stat-body-v2">
+                <div class="stat-label-v2">Pending</div>
+                <div class="stat-value-v2" style="color:#d97706">{{ stats.pending_orders }}</div>
+            </div>
+        </div>
+        <div class="stat-card-v2">
+            <div class="stat-icon-v2" style="background:#d1fae5;color:#059669">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="stat-body-v2">
+                <div class="stat-label-v2">Total Revenue</div>
+                <div class="stat-value-v2" style="color:#059669">${{ "%.2f"|format(stats.total_revenue) }}</div>
+            </div>
+        </div>
+        <div class="stat-card-v2">
+            <div class="stat-icon-v2" style="background:#fee2e2;color:#dc2626">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="stat-body-v2">
+                <div class="stat-label-v2">Unread Messages</div>
+                <div class="stat-value-v2" style="color:#dc2626" id="dash-unread">{{ stats.unread_messages }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="merchant-grid-2col">
+        <!-- Recent Orders -->
+        <div class="merchant-card">
+            <div class="merchant-card-header">
+                <h3>Recent Orders</h3>
+                <a href="{{ url_for('merchant_orders') }}" class="link-sm">View All &rarr;</a>
+            </div>
+            <div class="merchant-card-body" style="padding:0">
+                {% if stats.recent_orders %}
+                <table class="merchant-table">
+                    <thead><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                    {% for o in stats.recent_orders %}
+                    <tr>
+                        <td><b>#{{ o.id }}</b></td>
+                        <td>
+                            <div>{{ o.contact_name }}</div>
+                            <div style="font-size:11px;color:var(--gray)">{{ o.contact_email }}</div>
+                        </td>
+                        <td><b>${{ "%.2f"|format(o.total_amount) }}</b></td>
+                        <td><span class="status-badge status-{{ o.status }}">{{ o.status }}</span></td>
+                        <td><a href="{{ url_for('merchant_order_detail', order_id=o.id) }}" class="link-sm">View</a></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div style="padding:40px;text-align:center;color:var(--gray)">No orders yet</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Messages -->
+        <div class="merchant-card">
+            <div class="merchant-card-header">
+                <h3>Recent Messages</h3>
+                <a href="{{ url_for('merchant_messages') }}" class="link-sm">View All &rarr;</a>
+            </div>
+            <div class="merchant-card-body">
+                {% if stats.recent_messages %}
+                {% for msg in stats.recent_messages %}
+                <div class="msg-preview {{ 'msg-unread' if not msg.is_read }}">
+                    <div class="msg-avatar-sm">{{ msg.sender_name[0]|upper }}</div>
+                    <div class="msg-preview-body">
+                        <div class="msg-preview-header">
+                            <b>{{ msg.sender_name }}</b>
+                            <span>{{ msg.created_at.strftime('%m/%d %H:%M') }}</span>
+                        </div>
+                        <div class="msg-preview-text">{{ (msg.content or '')[:80] }}{% if msg.content and msg.content|length > 80 %}...{% endif %}</div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div style="padding:40px;text-align:center;color:var(--gray)">No messages yet</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</main>
 </div>
 
-<div style="display:flex;gap:16px">
-<div style="flex:2;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
-<h3 style="font-size:14px;font-weight:700;margin-bottom:10px">Recent Orders</h3>
-{% for o in stats.recent_orders %}
-<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
-<div><b>#{{ o.id }}</b> - {{ o.contact_name }}</div>
-<div style="display:flex;gap:12px;align-items:center">
-<span style="color:var(--gray)">{{ o.contact_email }}</span>
-<span style="font-weight:600;color:var(--blue)">${{ "%.2f"|format(o.total_amount) }}</span>
-<span class="status status-{{ o.status }}">{{ o.status }}</span>
-<a href="{{ url_for('merchant_order_detail', order_id=o.id) }}" style="font-size:11px;color:var(--blue)">View</a>
-</div></div>{% endfor %}
-</div>
-<div style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
-<h3 style="font-size:14px;font-weight:700;margin-bottom:10px">Recent Messages</h3>
-{% for msg in stats.recent_messages %}
-<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
-<b>{{ msg.sender_name }}</b> <span style="color:var(--gray)">({{ msg.sender_email }})</span>
-<p style="color:var(--gray);margin-top:2px">{{ (msg.content or '')[:80] }}...</p>
-<small style="color:var(--gray)">{{ msg.created_at.strftime('%m-%d %H:%M') }}</small>
-</div>{% endfor %}
-</div></div>
 
-{% if stats.notifications %}
-<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:16px">
-<h3 style="font-size:14px;font-weight:700;margin-bottom:8px">Notifications</h3>
-{% for n in stats.notifications %}
-<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;{{ 'background:#fffbeb' if not n.is_read }}">
-<b>{{ n.title }}</b> <span style="color:var(--gray)">{{ n.created_at.strftime('%m-%d %H:%M') }}</span>
-<p style="color:var(--gray);margin-top:2px">{{ n.content[:150] }}</p>
-</div>{% endfor %}
-</div>{% endif %}
-</div>
 
 <script>
-setInterval(async()=>{let r=await fetch('/api/messages/unread');let d=await r.json();let b=document.getElementById('unread-badge');let c=document.getElementById('unread-msg-count');b.textContent=d.count;b.style.display=d.count>0?'inline':'none';if(c)c.textContent=d.count},30000);
+setInterval(async()=>{
+    try {
+        let r = await fetch('/api/messages/unread');
+        let d = await r.json();
+        document.getElementById('dash-unread').textContent = d.count;
+        let sb = document.getElementById('sidebar-unread');
+        sb.textContent = d.count;
+        sb.style.display = d.count > 0 ? 'inline' : 'none';
+    } catch(e) {}
+}, 30000);
 </script>
+{% endblock %}

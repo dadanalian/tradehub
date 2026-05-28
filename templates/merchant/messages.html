@@ -1,94 +1,145 @@
-<div style="background:var(--dark);padding:0">
-<div class="container" style="display:flex;align-items:center;justify-content:space-between;height:48px">
-<div style="display:flex;align-items:center;gap:20px">
-<a href="/" style="color:#fff;font-size:16px;font-weight:800">TradeHub</a>
-<span style="color:#94a3b8;font-size:13px">Merchant Dashboard</span>
-</div>
-<nav style="display:flex;gap:4px">
-<a href="{{ url_for('merchant') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if request.endpoint=='merchant' }}">Dashboard</a>
-<a href="{{ url_for('merchant_orders') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'order' in request.endpoint and 'merchant' in request.endpoint }}">Orders</a>
-<a href="{{ url_for('merchant_messages') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'message' in request.endpoint }}">Messages <span id="unread-badge" style="background:#ef4444;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;display:none">0</span></a>
-<a href="{{ url_for('admin_products') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px">Products</a>
-<a href="{{ url_for('merchant_settings') }}" style="color:#94a3b8;padding:12px 16px;font-size:13px;{{ 'color:#fff;border-bottom:2px solid var(--blue)' if 'setting' in request.endpoint }}">Settings</a>
-</nav>
-</div></div>
+{% extends "base.html" %}
+{% block title %}Messages - TradeHub Merchant{% endblock %}
+{% block content %}
+<div class="merchant-layout">
+{% set page = 'messages' %}
+{% include 'merchant/_sidebar.html' %}
 
-<div class="container" style="margin:20px auto;max-width:1200px">
-<h2 style="font-size:20px;font-weight:700;margin-bottom:16px">Customer Messages</h2>
+<main class="merchant-main">
+    <header class="merchant-header">
+        <div><h1>Messages</h1><p>Communicate with your customers in real time</p></div>
+    </header>
 
-{% if conversations %}
-<div style="display:flex;gap:16px;height:70vh;min-height:500px">
-<!-- Left: Conversation List -->
-<div style="width:300px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow-y:auto;flex-shrink:0">
-{% for email, msgs in conversations.items() %}
-{% set latest = msgs[0] %}
-{% set unread = msgs|selectattr('is_read','equalto',false)|selectattr('is_from_merchant','equalto',false)|list|length %}
-<div class="conv-item" data-email="{{ email }}" onclick="openConv(this)" style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;{{ 'background:var(--blue-light)' if loop.first }}">
-<div style="display:flex;align-items:center;gap:10px">
-<div style="width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">{{ latest.sender_name[0]|upper }}</div>
-<div style="flex:1;min-width:0">
-<div style="display:flex;justify-content:space-between;align-items:center">
-<b style="font-size:13px">{{ latest.sender_name }}</b>
-<span style="font-size:10px;color:var(--gray)">{{ latest.created_at.strftime('%m-%d %H:%M') }}</span>
-</div>
-<div style="font-size:12px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px">{{ latest.content[:40] }}</div>
-</div>
-{% if unread > 0 %}
-<span style="background:#ef4444;color:#fff;font-size:10px;padding:2px 7px;border-radius:10px;flex-shrink:0">{{ unread }}</span>
-{% endif %}
-</div>
-</div>
-{% endfor %}
+    {% if conversations %}
+    <div class="chat-app">
+        <!-- Conversation List -->
+        <div class="chat-list">
+            <div class="chat-list-header">Conversations</div>
+            {% for email, msgs in conversations.items() %}
+            {% set latest = msgs[0] %}
+            {% set unread = msgs|selectattr('is_read','equalto',false)|selectattr('is_from_merchant','equalto',false)|list|length %}
+            <div class="chat-list-item {{ 'active' if loop.first }}" data-email="{{ email }}" onclick="openChat(this)" id="conv-{{ loop.index }}">
+                <div class="chat-list-avatar">{{ latest.sender_name[0]|upper }}</div>
+                <div class="chat-list-body">
+                    <div class="chat-list-top">
+                        <b>{{ latest.sender_name }}</b>
+                        <span class="chat-list-time">{{ latest.created_at.strftime('%H:%M') }}</span>
+                    </div>
+                    <div class="chat-list-preview">
+                        <span class="chat-list-lastmsg">{{ latest.content[:40] }}</span>
+                        {% if unread > 0 %}
+                        <span class="chat-list-badge">{{ unread }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Chat Window -->
+        <div class="chat-window">
+            {% set first_email = conversations.keys()|list|first %}
+            {% set first_msgs = conversations[first_email] %}
+            <div class="chat-window-header">
+                <div class="chat-window-avatar">{{ first_msgs[0].sender_name[0]|upper }}</div>
+                <div class="chat-window-info">
+                    <div class="chat-window-name" id="cw-name">{{ first_msgs[0].sender_name }}</div>
+                    <div class="chat-window-email" id="cw-email">{{ first_email }}</div>
+                </div>
+            </div>
+            <div class="chat-window-body" id="chat-bubbles">
+                {% for msg in first_msgs|reverse %}
+                {% if msg.is_from_merchant %}
+                <div class="chat-bubble-row right">
+                    <div class="chat-bubble merchant-bubble">
+                        <div class="bubble-text">{{ msg.content }}</div>
+                        <div class="bubble-meta">
+                            <span class="bubble-time">{{ msg.created_at.strftime('%H:%M') }}</span>
+                            <span class="bubble-check">{{ '✓✓' if msg.is_read else '✓' }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="chat-bubble-row left">
+                    <div class="chat-bubble customer-bubble">
+                        <div class="bubble-text">{{ msg.content }}</div>
+                        <div class="bubble-meta">
+                            <span class="bubble-time">{{ msg.created_at.strftime('%H:%M') }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <div class="chat-window-input">
+                <form action="{{ url_for('merchant_reply') }}" method="POST" class="chat-reply-form">
+                    <input type="hidden" name="email" value="{{ first_email }}">
+                    <input name="content" class="chat-input-field" placeholder="Type your reply..." required autocomplete="off">
+                    <button type="submit" class="chat-send-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="merchant-card" style="text-align:center;padding:60px">
+        <div style="font-size:48px;margin-bottom:12px">💬</div>
+        <h3 style="font-size:16px;color:#1e293b">No Messages Yet</h3>
+        <p style="color:#94a3b8;font-size:13px;margin-top:4px">Customer messages will appear here when they contact you</p>
+    </div>
+    {% endif %}
+</main>
 </div>
 
-<!-- Right: Chat Panel -->
-<div style="flex:1;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden" id="chat-panel">
-{% set first_email = conversations.keys()|list|first %}
-{% set first_msgs = conversations[first_email] %}
-<!-- Chat Header -->
-<div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:#fafbfc">
-<div style="width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">{{ first_msgs[0].sender_name[0]|upper }}</div>
-<div>
-<div style="font-weight:600;font-size:14px" id="chat-customer-name">{{ first_msgs[0].sender_name }}</div>
-<div style="font-size:11px;color:var(--gray)" id="chat-customer-email">{{ first_email }}</div>
-</div>
-</div>
-<!-- Messages -->
-<div id="chat-bubbles" style="flex:1;overflow-y:auto;padding:16px 20px;background:#f0f2f5">
-{% for msg in first_msgs|reverse %}
-{% if msg.is_from_merchant %}
-<div style="display:flex;justify-content:flex-end;margin:8px 0">
-<div style="max-width:70%">
-<div style="padding:10px 14px;border-radius:16px 16px 4px 16px;background:var(--blue);color:#fff;font-size:13px;line-height:1.5;word-break:break-word">{{ msg.content }}</div>
-<div style="font-size:10px;color:var(--gray);text-align:right;margin-top:3px">{{ msg.created_at.strftime('%H:%M') }}</div>
-</div>
-</div>
-{% else %}
-<div style="display:flex;align-items:flex-start;gap:8px;margin:8px 0">
-<div style="width:30px;height:30px;border-radius:50%;background:#cbd5e1;color:#475569;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">{{ msg.sender_name[0]|upper }}</div>
-<div style="max-width:70%">
-<div style="padding:10px 14px;border-radius:16px 16px 16px 4px;background:#fff;color:#333;font-size:13px;line-height:1.5;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,0.05)">{{ msg.content }}</div>
-<div style="font-size:10px;color:var(--gray);margin-top:3px">{{ msg.created_at.strftime('%H:%M') }}</div>
-</div>
-</div>
-{% endif %}
-{% endfor %}
-</div>
-<!-- Reply Input -->
-<form action="{{ url_for('merchant_reply') }}" method="POST" style="padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:10px;background:#fafbfc">
-<input type="hidden" name="email" value="{{ first_email }}">
-<input name="content" style="flex:1;padding:10px 16px;border:1px solid var(--border);border-radius:24px;font-size:13px;outline:none;background:#fff" placeholder="Type your reply..." required>
-<button type="submit" class="btn-blue" style="padding:10px 24px;border-radius:24px;font-size:13px;white-space:nowrap">Send</button>
-</form>
-</div>
-</div>
-{% else %}
-<div class="empty"><div class="icon">💬</div><h3>No messages yet</h3><p>Customer messages will appear here</p></div>
-{% endif %}
-</div>
+<style>
+/* Chat App Layout */
+.chat-app { display: flex; height: calc(100vh - 180px); min-height: 500px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
+
+/* Chat List (left) */
+.chat-list { width: 320px; border-right: 1px solid #e2e8f0; overflow-y: auto; flex-shrink: 0; background: #fafbfc; }
+.chat-list-header { padding: 16px 20px; font-size: 14px; font-weight: 600; color: #1e293b; border-bottom: 1px solid #e2e8f0; background: #fff; }
+.chat-list-item { display: flex; gap: 12px; padding: 14px 20px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid #f1f5f9; }
+.chat-list-item:hover { background: #f1f5f9; }
+.chat-list-item.active { background: #eff6ff; border-left: 3px solid #2563eb; }
+.chat-list-avatar { width: 42px; height: 42px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+.chat-list-body { flex: 1; min-width: 0; }
+.chat-list-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.chat-list-time { font-size: 10px; color: #94a3b8; }
+.chat-list-preview { display: flex; justify-content: space-between; align-items: center; margin-top: 3px; }
+.chat-list-lastmsg { font-size: 12px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.chat-list-badge { background: #ef4444; color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; }
+
+/* Chat Window (right) */
+.chat-window { flex: 1; display: flex; flex-direction: column; background: #f8fafc; }
+.chat-window-header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+.chat-window-avatar { width: 38px; height: 38px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+.chat-window-name { font-size: 14px; font-weight: 600; color: #1e293b; }
+.chat-window-email { font-size: 11px; color: #94a3b8; }
+
+/* Bubbles */
+.chat-window-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+.chat-bubble-row { display: flex; margin: 4px 0; }
+.chat-bubble-row.left { justify-content: flex-start; }
+.chat-bubble-row.right { justify-content: flex-end; }
+.chat-bubble { max-width: 72%; padding: 10px 14px; border-radius: 18px; font-size: 13px; line-height: 1.5; word-break: break-word; position: relative; }
+.customer-bubble { background: #fff; color: #334155; border-radius: 18px 18px 18px 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.merchant-bubble { background: #2563eb; color: #fff; border-radius: 18px 18px 4px 18px; }
+.bubble-text { white-space: pre-wrap; }
+.bubble-meta { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 4px; font-size: 10px; opacity: 0.7; }
+.bubble-time { font-size: 10px; }
+.bubble-check { font-size: 10px; }
+
+/* Input */
+.chat-window-input { padding: 12px 20px; background: #fff; border-top: 1px solid #e2e8f0; }
+.chat-reply-form { display: flex; gap: 10px; align-items: center; }
+.chat-input-field { flex: 1; padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 24px; font-size: 13px; outline: none; background: #f8fafc; transition: border-color 0.15s; }
+.chat-input-field:focus { border-color: #2563eb; background: #fff; }
+.chat-send-btn { width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; flex-shrink: 0; }
+.chat-send-btn:hover { background: #1d4ed8; }
+</style>
 
 <script>
-// All conversation data
 var allConvs = {
 {% for email, msgs in conversations.items() %}
 "{{ email }}": {
@@ -96,56 +147,47 @@ var allConvs = {
     unread: {{ msgs|selectattr('is_read','equalto',false)|selectattr('is_from_merchant','equalto',false)|list|length }},
     msgs: [
     {% for msg in msgs|reverse %}
-    {content: "{{ msg.content|replace('\n','\\n')|replace('"','\\"') }}", is_merchant: {{ 'true' if msg.is_from_merchant else 'false' }}, time: "{{ msg.created_at.strftime('%H:%M') }}", name: "{{ msg.sender_name }}", initial: "{{ msg.sender_name[0]|upper }}"}{{ ',' if not loop.last }}
+    {content: "{{ msg.content|replace('\\n','\\\\n')|replace('"','\\"') }}", is_merchant: {{ 'true' if msg.is_from_merchant else 'false' }}, time: "{{ msg.created_at.strftime('%H:%M') }}", read: {{ 'true' if msg.is_read else 'false' }}}{% if not loop.last %},{% endif %}
     {% endfor %}
     ]
-}{{ ',' if not loop.last }}
+}{% if not loop.last %},{% endif %}
 {% endfor %}
 };
 
-function openConv(el) {
-    // Highlight
-    document.querySelectorAll('.conv-item').forEach(i => i.style.background = '');
-    el.style.background = 'var(--blue-light)';
-    
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function openChat(el) {
+    document.querySelectorAll('.chat-list-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
     var email = el.dataset.email;
     var conv = allConvs[email];
     if (!conv) return;
     
-    // Mark as read
     fetch('/api/messages/read', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:email})});
-    // Clear unread badge
-    var badge = el.querySelector('span[style*="background:#ef4444"]');
-    if (badge) badge.style.display = 'none';
+    var badge = el.querySelector('.chat-list-badge');
+    if (badge) badge.remove();
     
-    // Update header
-    document.getElementById('chat-customer-name').textContent = conv.name;
-    document.getElementById('chat-customer-email').textContent = email;
+    document.getElementById('cw-name').textContent = conv.name;
+    document.getElementById('cw-email').textContent = email;
+    document.querySelector('.chat-reply-form input[name="email"]').value = email;
     
-    // Update reply form
-    document.querySelector('#chat-panel form input[name="email"]').value = email;
-    
-    // Render bubbles
     var html = '';
     conv.msgs.forEach(function(m) {
         if (m.is_merchant) {
-            html += '<div style="display:flex;justify-content:flex-end;margin:8px 0"><div style="max-width:70%"><div style="padding:10px 14px;border-radius:16px 16px 4px 16px;background:var(--blue);color:#fff;font-size:13px;line-height:1.5;word-break:break-word">'+escHtml(m.content)+'</div><div style="font-size:10px;color:var(--gray);text-align:right;margin-top:3px">'+m.time+'</div></div></div>';
+            html += '<div class="chat-bubble-row right"><div class="chat-bubble merchant-bubble"><div class="bubble-text">'+esc(m.content)+'</div><div class="bubble-meta"><span class="bubble-time">'+m.time+'</span><span class="bubble-check">'+(m.read ? '\u2713\u2713' : '\u2713')+'</span></div></div></div>';
         } else {
-            html += '<div style="display:flex;align-items:flex-start;gap:8px;margin:8px 0"><div style="width:30px;height:30px;border-radius:50%;background:#cbd5e1;color:#475569;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">'+m.initial+'</div><div style="max-width:70%"><div style="padding:10px 14px;border-radius:16px 16px 16px 4px;background:#fff;color:#333;font-size:13px;line-height:1.5;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,0.05)">'+escHtml(m.content)+'</div><div style="font-size:10px;color:var(--gray);margin-top:3px">'+m.time+'</div></div></div>';
+            html += '<div class="chat-bubble-row left"><div class="chat-bubble customer-bubble"><div class="bubble-text">'+esc(m.content)+'</div><div class="bubble-meta"><span class="bubble-time">'+m.time+'</span></div></div></div>';
         }
     });
     document.getElementById('chat-bubbles').innerHTML = html;
     document.getElementById('chat-bubbles').scrollTop = document.getElementById('chat-bubbles').scrollHeight;
 }
 
-function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-// Scroll to bottom on load
 document.addEventListener('DOMContentLoaded', function() {
     var bubbles = document.getElementById('chat-bubbles');
     if (bubbles) bubbles.scrollTop = bubbles.scrollHeight;
 });
 
-// Auto-refresh every 30s
-setInterval(function(){location.reload()}, 30000);
+setInterval(function(){ location.reload(); }, 30000);
 </script>
+{% endblock %}
