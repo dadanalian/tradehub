@@ -1,4 +1,4 @@
-﻿import os, random
+import os, random
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
@@ -9,6 +9,8 @@ def create_app():
     app = Flask(__name__, instance_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "instance"))
     app.config.from_object(Config)
     db.init_app(app)
+    with app.app_context():
+        db.create_all()
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = "login"
@@ -608,13 +610,11 @@ def create_app():
             auto_seed()
         except:
             pass
-            admin = User.query.filter_by(username="admin").first()
-            if admin:
-                admin.email = "1966899806@qq.com"
-                admin.set_password("smy..521")
-                db.session.commit()
-        except:
-            pass
+        admin = User.query.filter_by(username="admin").first()
+        if admin:
+            admin.email = "1966899806@qq.com"
+            admin.set_password("smy..521")
+            db.session.commit()
         return f"OK {result.stdout[:100]}"
 
     @app.route("/admin/auto-update")
@@ -628,8 +628,6 @@ def create_app():
         try:
             db.create_all()
             auto_seed()
-        except:
-            pass
         except:
             pass
         # Update admin credentials
