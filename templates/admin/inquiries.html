@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Admin - Inquiries{% endblock %}
+{% block content %}
+<div class="container py-4"><h2 class="fw-bold mb-4">Customer Inquiries</h2>
+<div class="table-responsive"><table class="table table-hover align-middle">
+    <thead class="table-light"><tr><th>#</th><th>Name</th><th>Email</th><th>Company</th><th>Product</th><th>Message</th><th>Status</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+        {% for i in inquiries %}
+        <tr class="{{ 'table-warning' if not i.is_read }}">
+            <td>{{ i.id }}</td><td>{{ i.name }}</td><td>{{ i.email }}</td><td>{{ i.company or '-' }}</td>
+            <td>{{ i.product.name_en if i.product else '-' }}</td>
+            <td><small>{{ i.message[:80] }}...</small></td>
+            <td><span class="badge bg-{{ 'success' if i.is_read else 'warning' }}">{{ 'Read' if i.is_read else 'New' }}</span></td>
+            <td>{{ i.created_at.strftime("%m-%d %H:%M") }}</td>
+            <td>
+                {% if not i.is_read %}
+                <form action="{{ url_for("admin_inquiry_read", inquiry_id=i.id) }}" method="POST"><button class="btn btn-sm btn-outline-success">Mark Read</button></form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table></div></div>
+{% endblock %}

@@ -1,0 +1,156 @@
+﻿<!DOCTYPE html>
+<html lang=""{{ lang }}"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>TradeHub - {% block title %}{% if lang == 'zh' %}外贸交易平台{% else %}Global Trade Platform{% endif %}{% endblock %}</title>
+    <link href=""https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"" rel=""stylesheet"">
+    <link rel=""stylesheet"" href=""https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"">
+    <link rel=""stylesheet"" href=""{{ url_for('static', filename='css/style.css') }}"">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class=""top-bar bg-dark text-light py-2"">
+        <div class=""container d-flex justify-content-between align-items-center"">
+            <small>
+                {% if lang == 'zh' %}
+                📞 +86-400-888-9999 | ✉️ support@tradehub.com
+                {% else %}
+                📞 +86-400-888-9999 | ✉️ support@tradehub.com
+                {% endif %}
+            </small>
+            <div class=""d-flex align-items-center gap-3"">
+                <a href=""{{ url_for('set_lang', lang='zh') }}"" class=""text-light text-decoration-none {{ 'fw-bold' if lang == 'zh' }}"">中文</a>
+                <span class=""text-secondary"">|</span>
+                <a href=""{{ url_for('set_lang', lang='en') }}"" class=""text-light text-decoration-none {{ 'fw-bold' if lang == 'en' }}"">English</a>
+                {% if current_user.is_authenticated %}
+                <span class=""text-secondary"">|</span>
+                <a href=""{{ url_for('orders') }}"" class=""text-light text-decoration-none"">
+                    {{ '我的订单' if lang == 'zh' else 'My Orders' }}
+                </a>
+                <span class=""text-secondary"">|</span>
+                <a href=""{{ url_for('logout') }}"" class=""text-light text-decoration-none"">
+                    {{ '退出' if lang == 'zh' else 'Logout' }}
+                </a>
+                {% else %}
+                <span class=""text-secondary"">|</span>
+                <a href=""{{ url_for('login') }}"" class=""text-light text-decoration-none"">
+                    {{ '登录' if lang == 'zh' else 'Login' }}
+                </a>
+                <span class=""text-secondary"">|</span>
+                <a href=""{{ url_for('register') }}"" class=""text-light text-decoration-none"">
+                    {{ '注册' if lang == 'zh' else 'Register' }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class=""navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top"">
+        <div class=""container"">
+            <a class=""navbar-brand fw-bold text-primary"" href=""{{ url_for('index') }}"">
+                🦞 TradeHub
+            </a>
+            <button class=""navbar-toggler"" type=""button"" data-bs-toggle=""collapse"" data-bs-target=""#navbarNav"">
+                <span class=""navbar-toggler-icon""></span>
+            </button>
+            <div class=""collapse navbar-collapse"" id=""navbarNav"">
+                <ul class=""navbar-nav me-auto"">
+                    <li class=""nav-item"">
+                        <a class=""nav-link"" href=""{{ url_for('products') }}"">
+                            {{ '全部产品' if lang == 'zh' else 'All Products' }}
+                        </a>
+                    </li>
+                    <li class=""nav-item dropdown"">
+                        <a class=""nav-link dropdown-toggle"" href=""#"" data-bs-toggle=""dropdown"">
+                            {{ '产品分类' if lang == 'zh' else 'Categories' }}
+                        </a>
+                        <ul class=""dropdown-menu"">
+                            {% set cats = namespace(items=[]) %}
+                            {% for cat in get_categories() %}
+                            <li><a class=""dropdown-item"" href=""{{ url_for('products', category=cat.slug) }}"">{{ cat.name_zh if lang == 'zh' else cat.name_en }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    <li class=""nav-item"">
+                        <a class=""nav-link"" href=""{{ url_for('chat') }}"">
+                            🦞 {{ '龙虾助手' if lang == 'zh' else 'LobsterBot AI' }}
+                        </a>
+                    </li>
+                </ul>
+                <form class=""d-flex me-3"" action=""{{ url_for('products') }}"" method=""get"">
+                    <input class=""form-control me-2"" type=""search"" name=""search"" 
+                           placeholder=""{{ '搜索产品...' if lang == 'zh' else 'Search products...' }}"">
+                    <button class=""btn btn-outline-primary"" type=""submit"">
+                        <i class=""bi bi-search""></i>
+                    </button>
+                </form>
+                <a href=""{{ url_for('cart') }}"" class=""btn btn-outline-dark position-relative"">
+                    <i class=""bi bi-cart3""></i>
+                    <span class=""cart-badge"" id=""cart-count"">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class=""container mt-3"">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class=""alert alert-{{ category }} alert-dismissible fade show"" role=""alert"">
+            {{ message }}
+            <button type=""button"" class=""btn-close"" data-bs-dismiss=""alert""></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class=""bg-dark text-light pt-5 pb-3 mt-5"">
+        <div class=""container"">
+            <div class=""row"">
+                <div class=""col-md-4"">
+                    <h5 class=""fw-bold"">🦞 TradeHub</h5>
+                    <p class=""text-secondary"">
+                        {{ '全球 B2B 外贸交易平台，连接买家与优质供应商。' if lang == 'zh' else 'Global B2B trade platform connecting buyers with quality suppliers.' }}
+                    </p>
+                </div>
+                <div class=""col-md-2"">
+                    <h6>{{ '快速链接' if lang == 'zh' else 'Quick Links' }}</h6>
+                    <ul class=""list-unstyled"">
+                        <li><a href=""{{ url_for('products') }}"" class=""text-secondary text-decoration-none"">{{ '产品' if lang == 'zh' else 'Products' }}</a></li>
+                        <li><a href=""{{ url_for('chat') }}"" class=""text-secondary text-decoration-none"">{{ 'AI助手' if lang == 'zh' else 'AI Assistant' }}</a></li>
+                    </ul>
+                </div>
+                <div class=""col-md-3"">
+                    <h6>{{ '联系我们' if lang == 'zh' else 'Contact Us' }}</h6>
+                    <ul class=""list-unstyled text-secondary"">
+                        <li>📧 support@tradehub.com</li>
+                        <li>📞 +86-400-888-9999</li>
+                        <li>📍 Shenzhen, China</li>
+                    </ul>
+                </div>
+                <div class=""col-md-3"">
+                    <h6>{{ '支付方式' if lang == 'zh' else 'Payment Methods' }}</h6>
+                    <p class=""text-secondary"">T/T • L/C • PayPal • Western Union</p>
+                </div>
+            </div>
+            <hr class=""border-secondary"">
+            <p class=""text-center text-secondary mb-0"">&copy; 2026 TradeHub. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src=""https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js""></script>
+    <script src=""{{ url_for('static', filename='js/main.js') }}""></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

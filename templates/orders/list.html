@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ '我的订单' if lang == 'zh' else 'My Orders' }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="fw-bold mb-4">{{ '我的订单' if lang == 'zh' else 'My Orders' }}</h2>
+    {% if orders %}
+    <div class="table-responsive"><table class="table table-hover align-middle">
+        <thead class="table-light"><tr><th>#</th><th>{{ '日期' if lang == 'zh' else 'Date' }}</th><th>{{ '金额' if lang == 'zh' else 'Amount' }}</th><th>{{ '状态' if lang == 'zh' else 'Status' }}</th><th></th></tr></thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td><strong>#{{ order.id }}</strong></td>
+                <td>{{ order.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td class="fw-bold">${{ "%.2f"|format(order.total_amount) }}</td>
+                <td>
+                    {% set status_map = {"pending": ("待确认", "Pending"), "confirmed": ("已确认", "Confirmed"), "shipped": ("已发货", "Shipped"), "delivered": ("已送达", "Delivered"), "cancelled": ("已取消", "Cancelled")} %}
+                    {% set s = status_map.get(order.status, (order.status, order.status)) %}
+                    {% set badge_class = {"pending": "warning", "confirmed": "info", "shipped": "primary", "delivered": "success", "cancelled": "secondary"} %}
+                    <span class="badge bg-{{ badge_class.get(order.status, 'secondary') }}">{{ s[0] if lang == 'zh' else s[1] }}</span>
+                </td>
+                <td><a href="{{ url_for("order_detail", order_id=order.id) }}" class="btn btn-sm btn-outline-primary">{{ '详情' if lang == 'zh' else 'Details' }}</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+    {% else %}
+    <div class="text-center py-5"><i class="bi bi-inbox display-1 text-muted"></i><h4 class="text-muted mt-3">{{ '暂无订单' if lang == 'zh' else 'No orders yet' }}</h4><a href="{{ url_for("products") }}" class="btn btn-primary mt-3">{{ '去购物' if lang == 'zh' else 'Shop Now' }}</a></div>
+    {% endif %}
+</div>
+{% endblock %}

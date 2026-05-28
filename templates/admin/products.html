@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Admin - Products{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="fw-bold">Manage Products</h2><a href="{{ url_for("admin_product_add") }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Product</a></div>
+    <div class="table-responsive"><table class="table table-hover align-middle">
+        <thead class="table-light"><tr><th>ID</th><th>Image</th><th>Name</th><th>Price</th><th>Stock</th><th>Featured</th><th>Active</th><th></th></tr></thead>
+        <tbody>
+            {% for p in products %}
+            <tr>
+                <td>{{ p.id }}</td>
+                <td><img src="{{ p.image_url or 'https://placehold.co/40x40/e2e8f0/64748b?text=P' }}" width="40" class="rounded"></td>
+                <td>{{ p.name_en }}</td>
+                <td>${{ "%.2f"|format(p.price) }}</td>
+                <td>{{ p.stock }}</td>
+                <td>{{ 'Yes' if p.is_featured else 'No' }}</td>
+                <td>{{ 'Yes' if p.is_active else 'No' }}</td>
+                <td><a href="{{ url_for("admin_product_edit", product_id=p.id) }}" class="btn btn-sm btn-outline-primary">Edit</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+{% endblock %}

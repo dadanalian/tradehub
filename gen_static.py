@@ -1,0 +1,141 @@
+﻿import os
+BASE = r"C:\Users\19668\Documents\Codex\2026-05-28\new-chat\tradehub"
+
+# === CSS ===
+css = """/* TradeHub Styles */
+:root {
+    --primary: #667eea;
+    --primary-dark: #5a67d8;
+    --accent: #f59e0b;
+}
+
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+
+/* Hero Banner */
+.hero-banner {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 50%, #1a202c 100%);
+    min-height: 500px;
+    position: relative;
+    overflow: hidden;
+}
+.hero-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 60%;
+    height: 200%;
+    background: linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.1));
+    transform: rotate(-15deg);
+}
+
+/* Product Cards */
+.product-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    overflow: hidden;
+}
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.1) !important;
+}
+.product-img-wrapper {
+    height: 200px;
+    overflow: hidden;
+    background: #f1f5f9;
+    position: relative;
+}
+.product-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
+.product-card:hover .product-img-wrapper img {
+    transform: scale(1.05);
+}
+
+/* Category Cards */
+.category-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+.category-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.08) !important;
+}
+
+/* Cart Badge */
+.cart-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Chat */
+#chat-messages::-webkit-scrollbar { width: 6px; }
+#chat-messages::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* Navbar */
+.navbar { backdrop-filter: blur(10px); background: rgba(255,255,255,0.95) !important; }
+
+/* Flash Messages */
+.alert { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Footer */
+footer a:hover { color: white !important; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-banner { min-height: 350px; }
+    .hero-banner h1 { font-size: 2rem; }
+}
+"""
+
+with open(os.path.join(BASE, "static", "css", "style.css"), "w", encoding="utf-8") as f:
+    f.write(css)
+print("  OK: static/css/style.css")
+
+# === JS ===
+js = """// TradeHub Main Script
+
+// Update cart badge count on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-dismiss alerts after 5 seconds
+    setTimeout(function() {
+        document.querySelectorAll('.alert').forEach(function(el) {
+            var bsAlert = new bootstrap.Alert(el);
+            bsAlert.close();
+        });
+    }, 5000);
+    
+    // Update cart count from server
+    updateCartCount();
+});
+
+function updateCartCount() {
+    fetch('/cart/count')
+        .then(res => res.json())
+        .then(data => {
+            const badge = document.getElementById('cart-count');
+            if (badge) badge.textContent = data.count || 0;
+        })
+        .catch(() => {});
+}
+"""
+
+with open(os.path.join(BASE, "static", "js", "main.js"), "w", encoding="utf-8") as f:
+    f.write(js)
+print("  OK: static/js/main.js")
+
+print("CSS + JS done")

@@ -1,0 +1,71 @@
+﻿import os
+BASE = r"C:\Users\19668\Documents\Codex\2026-05-28\new-chat\tradehub\templates"
+def w(rel, content):
+    path = os.path.join(BASE, rel)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+    print(f"  OK: {rel}")
+
+# === products/detail.html ===
+w("products/detail.html", """{% extends "base.html" %}
+{% block title %}{{ product.name_zh if lang == 'zh' else product.name_en }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ url_for("index") }}">{{ '首页' if lang == 'zh' else 'Home' }}</a></li><li class="breadcrumb-item"><a href="{{ url_for("products") }}">{{ '产品' if lang == 'zh' else 'Products' }}</a></li><li class="breadcrumb-item active">{{ product.name_zh if lang == 'zh' else product.name_en }}</li></ol></nav>
+    <div class="row g-5">
+        <div class="col-md-6">
+            <img src="{{ product.image_url or 'https://placehold.co/600x600/e2e8f0/64748b?text=Product' }}" class="img-fluid rounded-3 shadow" alt="{{ product.name_en }}">
+        </div>
+        <div class="col-md-6">
+            <h2 class="fw-bold">{{ product.name_zh if lang == 'zh' else product.name_en }}</h2>
+            <p class="text-muted">{{ '分类' if lang == 'zh' else 'Category' }}: {{ product.category.name_zh if lang == 'zh' else product.category.name_en }}</p>
+            <h3 class="text-primary fw-bold my-3">${{ "%.2f"|format(product.price) }} <small class="text-muted fs-6">{{ product.currency }}</small></h3>
+            {% if product.moq and product.moq > 1 %}<p><span class="badge bg-warning text-dark">MOQ: {{ product.moq }} {{ '件' if lang == 'zh' else 'pcs' }}</span></p>{% endif %}
+            {% if product.stock > 0 %}<p class="text-success">{{ '库存: ' if lang == 'zh' else 'Stock: ' }}{{ product.stock }}</p>{% else %}<p class="text-danger">{{ '缺货' if lang == 'zh' else 'Out of stock' }}</p>{% endif %}
+            <hr>
+            <h5>{{ '产品描述' if lang == 'zh' else 'Description' }}</h5>
+            <p class="text-secondary">{{ (product.description_zh if lang == 'zh' else product.description_en) or ('暂无描述' if lang == 'zh' else 'No description') }}</p>
+            <hr>
+            {% if current_user.is_authenticated %}
+            <form action="{{ url_for("cart_add", product_id=product.id) }}" method="POST" class="d-flex gap-2 align-items-center">
+                <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="form-control w-auto" style="width:80px">
+                <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-cart-plus"></i> {{ '加入购物车' if lang == 'zh' else 'Add to Cart' }}</button>
+            </form>
+            {% else %}
+            <a href="{{ url_for("login") }}" class="btn btn-primary btn-lg">{{ '登录后购买' if lang == 'zh' else 'Login to Buy' }}</a>
+            {% endif %}
+        </div>
+    </div>
+    <!-- Inquiry Form -->
+    <div class="row mt-5"><div class="col-md-8 mx-auto"><div class="card shadow-sm"><div class="card-body p-4">
+        <h4 class="fw-bold mb-3">{{ '发送询盘' if lang == 'zh' else 'Send Inquiry' }}</h4>
+        <form action="{{ url_for("inquiry", product_id=product.id) }}" method="POST">
+            <div class="row g-3">
+                <div class="col-md-6"><input type="text" name="name" class="form-control" placeholder="{{ '您的姓名' if lang == 'zh' else 'Your Name' }}" required></div>
+                <div class="col-md-6"><input type="email" name="email" class="form-control" placeholder="{{ '您的邮箱' if lang == 'zh' else 'Your Email' }}" required></div>
+                <div class="col-md-6"><input type="text" name="company" class="form-control" placeholder="{{ '公司名称' if lang == 'zh' else 'Company' }}"></div>
+                <div class="col-md-6"><input type="text" name="phone" class="form-control" placeholder="{{ '电话' if lang == 'zh' else 'Phone' }}"></div>
+                <div class="col-12"><textarea name="message" class="form-control" rows="4" placeholder="{{ '请输入您的询盘内容...' if lang == 'zh' else 'Enter your inquiry...' }}" required></textarea></div>
+                <div class="col-12"><button type="submit" class="btn btn-success"><i class="bi bi-send"></i> {{ '发送询盘' if lang == 'zh' else 'Send Inquiry' }}</button></div>
+            </div>
+        </form>
+    </div></div></div></div>
+    <!-- Related Products -->
+    {% if related %}
+    <section class="mt-5"><h4 class="fw-bold mb-3">{{ '相关产品' if lang == 'zh' else 'Related Products' }}</h4><div class="row g-3">
+        {% for rp in related %}
+        <div class="col-md-3"><div class="card product-card h-100 shadow-sm">
+            <div class="product-img-wrapper"><img src="{{ rp.image_url or 'https://placehold.co/400x400/e2e8f0/64748b?text=Product' }}" class="card-img-top" alt="{{ rp.name_en }}"></div>
+            <div class="card-body"><h6 class="card-title">{{ rp.name_zh if lang == 'zh' else rp.name_en }}</h6>
+                <div class="d-flex justify-content-between align-items-center"><span class="fw-bold text-primary">${{ "%.2f"|format(rp.price) }}</span><a href="{{ url_for("product_detail", product_id=rp.id) }}" class="btn btn-sm btn-outline-primary">{{ '查看' if lang == 'zh' else 'View' }}</a></div>
+            </div>
+        </div></div>
+        {% endfor %}
+    </div></section>
+    {% endif %}
+</div>
+{% endblock %}
+""")
+
+print("Product detail done")
