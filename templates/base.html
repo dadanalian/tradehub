@@ -99,7 +99,7 @@ async function sendChat(){
     if(!content)return;
     document.getElementById('chat-input').value='';
     try{
-        await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,email:email,content:content})});
+        await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender_name:name,sender_email:email,content:content})});
         loadChat();
         // Push to WeChat directly from browser
         let notifyUrl='https://sctapi.ftqq.com/SCT356107TdAGEbh1QAfmdcjQxlsJGvQQc.send';

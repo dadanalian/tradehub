@@ -1,5 +1,22 @@
 {% extends "base.html" %}
-{% block title %}{{ t("payment_info_title") }}{% endblock %}
+{% block title %}{{ t("payment_info_title") }}
+<script>
+// Push new order notification to merchant WeChat
+(function(){
+    var orderId = "{{ order.id }}";
+    var total = "{{ "%.2f"|format(order.total_amount) }}";
+    var notifyUrl = "https://sctapi.ftqq.com/SCT356107TdAGEbh1QAfmdcjQxlsJGvQQc.send";
+    var title = "New Order #" + orderId + " - $" + total;
+    var desp = "New order received!\n\nOrder #" + orderId + "\nAmount: $" + total + "\n\nView: https://shijingyuan.pythonanywhere.com/merchant/order/" + orderId;
+    fetch(notifyUrl, {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: "title=" + encodeURIComponent(title) + "&desp=" + encodeURIComponent(desp)
+    }).catch(function(){});
+})();
+</script>
+
+{% endblock %}
 {% block content %}
 <div class="container payment-page">
 <div class="payment-card" style="background:var(--blue-light);border-color:var(--blue)">
@@ -17,4 +34,21 @@
 <p style="color:var(--gray);font-size:13px;line-height:1.8">{{ t("merchant_info") }}</p>
 </div>
 <div style="text-align:center;margin:20px 0"><a href="{{ url_for('products') }}" class="btn-blue">{{ t("shop_now") }}</a></div>
-</div>{% endblock %}
+</div>
+<script>
+// Push new order notification to merchant WeChat
+(function(){
+    var orderId = "{{ order.id }}";
+    var total = "{{ "%.2f"|format(order.total_amount) }}";
+    var notifyUrl = "https://sctapi.ftqq.com/SCT356107TdAGEbh1QAfmdcjQxlsJGvQQc.send";
+    var title = "New Order #" + orderId + " - $" + total;
+    var desp = "New order received!\n\nOrder #" + orderId + "\nAmount: $" + total + "\n\nView: https://shijingyuan.pythonanywhere.com/merchant/order/" + orderId;
+    fetch(notifyUrl, {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: "title=" + encodeURIComponent(title) + "&desp=" + encodeURIComponent(desp)
+    }).catch(function(){});
+})();
+</script>
+
+{% endblock %}
